@@ -60,7 +60,7 @@ const CheckInModal = ({ open, onClose, question, onSubmit }: CheckInModalProps) 
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl">Time for a Check-in! 📝</DialogTitle>
+          <DialogTitle className="font-heading text-xl">Time for a Check-in! 📝</DialogTitle>
           <DialogDescription className="text-base pt-2">{question}</DialogDescription>
         </DialogHeader>
 

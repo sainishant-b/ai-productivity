@@ -88,7 +88,8 @@ export default {
         "streak-pulse": "streak-pulse 2s infinite",
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Raleway', 'sans-serif'],
+        heading: ['Playfair Display', 'serif'],
       },
     },
   },

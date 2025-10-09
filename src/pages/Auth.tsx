@@ -65,16 +65,16 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/10 via-background to-accent/10">
-      <Card className="w-full max-w-md shadow-xl">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-background">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
           <div className="flex justify-center mb-2">
-            <div className="bg-primary text-primary-foreground p-3 rounded-2xl">
+            <div className="bg-foreground text-background p-3 rounded-full">
               <Target className="h-8 w-8" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold">AI Productivity Companion</CardTitle>
-          <CardDescription>Stay accountable with random check-ins throughout your day</CardDescription>
+          <CardTitle className="font-heading text-3xl font-bold">AI Productivity Companion</CardTitle>
+          <CardDescription>Stay accountable with intelligent check-ins</CardDescription>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="space-y-4">

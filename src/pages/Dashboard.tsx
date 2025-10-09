@@ -147,10 +147,13 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold">AI Productivity Companion</h1>
+          <h1 className="font-heading text-2xl font-bold">AI Productivity Companion</h1>
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)}>
               Check-in Now
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/settings")}>
+              Settings
             </Button>
             <Button variant="ghost" size="icon" onClick={handleSignOut}>
               <LogOut className="h-5 w-5" />
@@ -163,7 +166,7 @@ const Dashboard = () => {
         <div className="grid md:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardTitle className="font-heading text-sm font-medium flex items-center gap-2">
                 <Flame className="h-4 w-4 text-success" />
                 Current Streak
               </CardTitle>
@@ -175,7 +178,7 @@ const Dashboard = () => {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Tasks Completed</CardTitle>
+              <CardTitle className="font-heading text-sm font-medium">Tasks Completed</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">{completedCount}</p>
@@ -184,7 +187,7 @@ const Dashboard = () => {
 
           <Card className="bg-accent/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <CardTitle className="font-heading text-sm font-medium flex items-center gap-2">
                 <Sparkles className="h-4 w-4" />
                 AI Insight
               </CardTitle>
@@ -196,7 +199,7 @@ const Dashboard = () => {
         </div>
 
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Your Tasks</h2>
+          <h2 className="font-heading text-2xl font-bold">Your Tasks</h2>
           <Button onClick={() => { setSelectedTask(null); setShowTaskDialog(true); }}>
             <Plus className="h-4 w-4 mr-2" />
             New Task
@@ -220,7 +223,7 @@ const Dashboard = () => {
                 key={task.id}
                 task={task}
                 onToggleComplete={handleToggleComplete}
-                onClick={(id) => { setSelectedTask(tasks.find(t => t.id === id)); setShowTaskDialog(true); }}
+                onClick={(id) => navigate(`/task/${id}`)}
               />
             ))}
           </div>
