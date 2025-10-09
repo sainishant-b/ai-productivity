@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Flame, LogOut, Sparkles } from "lucide-react";
+import { Plus, Flame, LogOut, Sparkles, Clock } from "lucide-react";
 import { toast } from "sonner";
 import TaskCard from "@/components/TaskCard";
 import TaskDialog from "@/components/TaskDialog";
 import CheckInModal from "@/components/CheckInModal";
+import { useCheckInScheduler } from "@/hooks/useCheckInScheduler";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -26,6 +27,18 @@ const Dashboard = () => {
     "Feeling stuck on anything?",
     "What did you accomplish in the last hour?",
   ];
+
+  const { formatNextCheckIn, isWorkHours } = useCheckInScheduler(profile, () => {
+    if (!showCheckIn) {
+      toast.info("Time for a check-in! 📝", {
+        duration: 5000,
+        action: {
+          label: "Check-in",
+          onClick: () => setShowCheckIn(true),
+        },
+      });
+    }
+  });
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -173,6 +186,21 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">{profile?.current_streak || 0} days</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="font-heading text-sm font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Next Check-in
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm font-medium">{formatNextCheckIn()}</p>
+              {!isWorkHours && (
+                <p className="text-xs text-muted-foreground mt-1">Outside work hours</p>
+              )}
             </CardContent>
           </Card>
 
