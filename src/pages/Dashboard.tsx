@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Flame, LogOut, Sparkles, Clock } from "lucide-react";
+import { Plus, Flame, LogOut, Sparkles, Clock, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import TaskCard from "@/components/TaskCard";
 import TaskDialog from "@/components/TaskDialog";
@@ -164,6 +164,10 @@ const Dashboard = () => {
           <div className="flex items-center gap-4">
             <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)}>
               Check-in Now
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")}>
+              <Calendar className="h-4 w-4 mr-2" />
+              Calendar
             </Button>
             <Button variant="outline" size="sm" onClick={() => navigate("/settings")}>
               Settings
