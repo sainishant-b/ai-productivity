@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { TaskCalendar } from "@/components/TaskCalendar";
+import TaskDialog from "@/components/TaskDialog";
 import { Button } from "@/components/ui/button";
 import { Calendar, List, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -11,6 +12,8 @@ export default function CalendarView() {
   const [tasks, setTasks] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<"month" | "week">("month");
   const [loading, setLoading] = useState(true);
+  const [isTaskDialogOpen, setIsTaskDialogOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchTasks();
@@ -42,6 +45,36 @@ export default function CalendarView() {
 
   const handleTaskClick = (taskId: string) => {
     navigate(`/task/${taskId}`);
+  };
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+    setIsTaskDialogOpen(true);
+  };
+
+  const handleSaveTask = async (taskData: any) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const newTask = {
+        ...taskData,
+        user_id: user.id,
+        due_date: selectedDate?.toISOString(),
+      };
+
+      const { error } = await supabase.from("tasks").insert([newTask]);
+
+      if (error) throw error;
+
+      toast.success("Task created successfully");
+      fetchTasks();
+      setIsTaskDialogOpen(false);
+      setSelectedDate(null);
+    } catch (error) {
+      console.error("Error creating task:", error);
+      toast.error("Failed to create task");
+    }
   };
 
   if (loading) {
@@ -96,9 +129,20 @@ export default function CalendarView() {
         <TaskCalendar
           tasks={tasks}
           onTaskClick={handleTaskClick}
+          onDateClick={handleDateClick}
           viewMode={viewMode}
         />
       </main>
+
+      {/* Task Dialog */}
+      <TaskDialog
+        open={isTaskDialogOpen}
+        onClose={() => {
+          setIsTaskDialogOpen(false);
+          setSelectedDate(null);
+        }}
+        onSave={handleSaveTask}
+      />
     </div>
   );
 }
