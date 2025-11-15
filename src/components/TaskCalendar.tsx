@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, addMonths, subMonths } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, addMonths, subMonths, addWeeks, subWeeks } from "date-fns";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -16,18 +16,29 @@ interface Task {
 interface TaskCalendarProps {
   tasks: Task[];
   onTaskClick: (taskId: string) => void;
+  onDateClick: (date: Date) => void;
   viewMode: "month" | "week";
 }
 
-export function TaskCalendar({ tasks, onTaskClick, viewMode }: TaskCalendarProps) {
+export function TaskCalendar({ tasks, onTaskClick, onDateClick, viewMode }: TaskCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
 
-  const monthStart = startOfMonth(currentDate);
-  const monthEnd = endOfMonth(currentDate);
-  const calendarStart = startOfWeek(monthStart);
-  const calendarEnd = endOfWeek(monthEnd);
+  const getDateRange = () => {
+    if (viewMode === "week") {
+      const weekStart = startOfWeek(currentDate);
+      const weekEnd = endOfWeek(currentDate);
+      return { start: weekStart, end: weekEnd };
+    } else {
+      const monthStart = startOfMonth(currentDate);
+      const monthEnd = endOfMonth(currentDate);
+      const calendarStart = startOfWeek(monthStart);
+      const calendarEnd = endOfWeek(monthEnd);
+      return { start: calendarStart, end: calendarEnd };
+    }
+  };
 
-  const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+  const { start, end } = getDateRange();
+  const days = eachDayOfInterval({ start, end });
 
   const getTasksForDay = (day: Date) => {
     return tasks.filter(task => {
@@ -45,16 +56,36 @@ export function TaskCalendar({ tasks, onTaskClick, viewMode }: TaskCalendarProps
     }
   };
 
+  const handlePrevious = () => {
+    if (viewMode === "week") {
+      setCurrentDate(subWeeks(currentDate, 1));
+    } else {
+      setCurrentDate(subMonths(currentDate, 1));
+    }
+  };
+
+  const handleNext = () => {
+    if (viewMode === "week") {
+      setCurrentDate(addWeeks(currentDate, 1));
+    } else {
+      setCurrentDate(addMonths(currentDate, 1));
+    }
+  };
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="font-serif text-2xl">{format(currentDate, "MMMM yyyy")}</h2>
+        <h2 className="font-serif text-2xl">
+          {viewMode === "week" 
+            ? `Week of ${format(startOfWeek(currentDate), "MMM d, yyyy")}`
+            : format(currentDate, "MMMM yyyy")}
+        </h2>
         <div className="flex gap-2">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setCurrentDate(subMonths(currentDate, 1))}
+            onClick={handlePrevious}
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -67,7 +98,7 @@ export function TaskCalendar({ tasks, onTaskClick, viewMode }: TaskCalendarProps
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setCurrentDate(addMonths(currentDate, 1))}
+            onClick={handleNext}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -94,17 +125,27 @@ export function TaskCalendar({ tasks, onTaskClick, viewMode }: TaskCalendarProps
             <div
               key={day.toString()}
               className={cn(
-                "min-h-[100px] p-2 border border-border rounded-sm",
+                "min-h-[100px] p-2 border border-border rounded-sm relative group",
                 !isCurrentMonth && "bg-muted/30",
                 isToday && "border-foreground border-2"
               )}
             >
-              <div className={cn(
-                "text-sm mb-2",
-                isToday && "font-bold",
-                !isCurrentMonth && "text-muted-foreground"
-              )}>
-                {format(day, "d")}
+              <div className="flex items-center justify-between mb-2">
+                <div className={cn(
+                  "text-sm",
+                  isToday && "font-bold",
+                  !isCurrentMonth && "text-muted-foreground"
+                )}>
+                  {format(day, "d")}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={() => onDateClick(day)}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
               </div>
               <div className="space-y-1">
                 {dayTasks.slice(0, 3).map(task => (
