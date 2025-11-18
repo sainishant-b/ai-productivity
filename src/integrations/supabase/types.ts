@@ -94,6 +94,47 @@ export type Database = {
         }
         Relationships: []
       }
+      task_history: {
+        Row: {
+          created_at: string
+          field_changed: string
+          id: string
+          new_value: string | null
+          notes: string | null
+          old_value: string | null
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          field_changed: string
+          id?: string
+          new_value?: string | null
+          notes?: string | null
+          old_value?: string | null
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          field_changed?: string
+          id?: string
+          new_value?: string | null
+          notes?: string | null
+          old_value?: string | null
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_history_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           category: string
@@ -103,6 +144,7 @@ export type Database = {
           due_date: string | null
           estimated_duration: number | null
           id: string
+          notes: string | null
           priority: string
           progress: number
           status: string
@@ -117,6 +159,7 @@ export type Database = {
           due_date?: string | null
           estimated_duration?: number | null
           id?: string
+          notes?: string | null
           priority: string
           progress?: number
           status?: string
@@ -131,6 +174,7 @@ export type Database = {
           due_date?: string | null
           estimated_duration?: number | null
           id?: string
+          notes?: string | null
           priority?: string
           progress?: number
           status?: string
