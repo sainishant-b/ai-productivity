@@ -346,7 +346,7 @@ const TaskWorkspace = () => {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
-          <Button onClick={() => navigate("/dashboard")} variant="ghost" size="sm">
+          <Button onClick={() => navigate("/")} variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
