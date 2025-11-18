@@ -3,10 +3,31 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, Clock, PlayCircle, StopCircle } from "lucide-react";
+import { 
+  ArrowLeft, 
+  CheckCircle2, 
+  Clock, 
+  PlayCircle, 
+  StopCircle, 
+  Edit2, 
+  Save, 
+  X,
+  TrendingUp,
+  Calendar,
+  Zap,
+  Heart,
+  History,
+  FileText
+} from "lucide-react";
 import CheckInModal from "@/components/CheckInModal";
+import { format } from "date-fns";
 
 interface Task {
   id: string;
@@ -15,6 +36,12 @@ interface Task {
   priority: string;
   status: string;
   progress: number;
+  notes: string | null;
+  category: string;
+  due_date: string | null;
+  estimated_duration: number | null;
+  created_at: string;
+  completed_at: string | null;
 }
 
 interface CheckIn {
@@ -25,18 +52,37 @@ interface CheckIn {
   energy_level: number | null;
 }
 
+interface TaskHistory {
+  id: string;
+  field_changed: string;
+  old_value: string | null;
+  new_value: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
 const TaskWorkspace = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
   const [task, setTask] = useState<Task | null>(null);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
+  const [taskHistory, setTaskHistory] = useState<TaskHistory[]>([]);
   const [isWorking, setIsWorking] = useState(false);
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [sessionStart, setSessionStart] = useState<Date | null>(null);
+  
+  // Edit states
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isEditingNotes, setIsEditingNotes] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [editedDescription, setEditedDescription] = useState("");
+  const [editedNotes, setEditedNotes] = useState("");
 
   useEffect(() => {
     loadTask();
     loadCheckIns();
+    loadTaskHistory();
   }, [taskId]);
 
   const loadTask = async () => {
@@ -50,11 +96,14 @@ const TaskWorkspace = () => {
 
     if (error) {
       toast.error("Failed to load task");
-      navigate("/dashboard");
+      navigate("/");
       return;
     }
 
     setTask(data);
+    setEditedTitle(data.title);
+    setEditedDescription(data.description || "");
+    setEditedNotes(data.notes || "");
   };
 
   const loadCheckIns = async () => {
@@ -69,6 +118,38 @@ const TaskWorkspace = () => {
     if (data) {
       setCheckIns(data);
     }
+  };
+
+  const loadTaskHistory = async () => {
+    if (!taskId) return;
+
+    const { data } = await supabase
+      .from("task_history")
+      .select("*")
+      .eq("task_id", taskId)
+      .order("created_at", { ascending: false });
+
+    if (data) {
+      setTaskHistory(data);
+    }
+  };
+
+  const logTaskChange = async (field: string, oldValue: any, newValue: any, notes?: string) => {
+    if (!taskId) return;
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    await supabase.from("task_history").insert({
+      task_id: taskId,
+      user_id: user.id,
+      field_changed: field,
+      old_value: oldValue?.toString() || null,
+      new_value: newValue?.toString() || null,
+      notes: notes || null,
+    });
+
+    loadTaskHistory();
   };
 
   const startWorkSession = async () => {
@@ -115,8 +196,9 @@ const TaskWorkspace = () => {
   };
 
   const updateProgress = async (newProgress: number) => {
-    if (!taskId) return;
+    if (!taskId || !task) return;
 
+    const oldProgress = task.progress;
     const { error } = await supabase
       .from("tasks")
       .update({ progress: newProgress })
@@ -127,16 +209,96 @@ const TaskWorkspace = () => {
       return;
     }
 
+    await logTaskChange("progress", oldProgress, newProgress, `Progress updated from ${oldProgress}% to ${newProgress}%`);
     setTask(prev => prev ? { ...prev, progress: newProgress } : null);
     toast.success("Progress updated!");
   };
 
-  const completeTask = async () => {
-    if (!taskId) return;
+  const saveTitle = async () => {
+    if (!taskId || !task || editedTitle.trim() === "") return;
 
     const { error } = await supabase
       .from("tasks")
-      .update({ status: "completed", progress: 100 })
+      .update({ title: editedTitle })
+      .eq("id", taskId);
+
+    if (error) {
+      toast.error("Failed to update title");
+      return;
+    }
+
+    await logTaskChange("title", task.title, editedTitle);
+    setTask(prev => prev ? { ...prev, title: editedTitle } : null);
+    setIsEditingTitle(false);
+    toast.success("Title updated!");
+  };
+
+  const saveDescription = async () => {
+    if (!taskId || !task) return;
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({ description: editedDescription })
+      .eq("id", taskId);
+
+    if (error) {
+      toast.error("Failed to update description");
+      return;
+    }
+
+    await logTaskChange("description", task.description, editedDescription);
+    setTask(prev => prev ? { ...prev, description: editedDescription } : null);
+    setIsEditingDescription(false);
+    toast.success("Description updated!");
+  };
+
+  const saveNotes = async () => {
+    if (!taskId || !task) return;
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({ notes: editedNotes })
+      .eq("id", taskId);
+
+    if (error) {
+      toast.error("Failed to update notes");
+      return;
+    }
+
+    await logTaskChange("notes", task.notes, editedNotes, "Notes updated");
+    setTask(prev => prev ? { ...prev, notes: editedNotes } : null);
+    setIsEditingNotes(false);
+    toast.success("Notes saved!");
+  };
+
+  const updatePriority = async (newPriority: string) => {
+    if (!taskId || !task) return;
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({ priority: newPriority })
+      .eq("id", taskId);
+
+    if (error) {
+      toast.error("Failed to update priority");
+      return;
+    }
+
+    await logTaskChange("priority", task.priority, newPriority);
+    setTask(prev => prev ? { ...prev, priority: newPriority } : null);
+    toast.success("Priority updated!");
+  };
+
+  const completeTask = async () => {
+    if (!taskId || !task) return;
+
+    const { error } = await supabase
+      .from("tasks")
+      .update({ 
+        status: "completed", 
+        progress: 100,
+        completed_at: new Date().toISOString()
+      })
       .eq("id", taskId);
 
     if (error) {
@@ -144,8 +306,38 @@ const TaskWorkspace = () => {
       return;
     }
 
+    await logTaskChange("status", task.status, "completed", "Task marked as completed");
     toast.success("Task completed! 🎉");
-    navigate("/dashboard");
+    navigate("/");
+  };
+
+  const getMoodEmoji = (mood: string | null) => {
+    switch (mood) {
+      case "great": return "😄";
+      case "good": return "🙂";
+      case "okay": return "😐";
+      case "struggling": return "😟";
+      default: return "💭";
+    }
+  };
+
+  const getMoodStats = () => {
+    if (checkIns.length === 0) return null;
+    
+    const moods = checkIns.filter(c => c.mood).map(c => c.mood);
+    const energyLevels = checkIns.filter(c => c.energy_level).map(c => c.energy_level!);
+    
+    const avgEnergy = energyLevels.length > 0 
+      ? (energyLevels.reduce((a, b) => a + b, 0) / energyLevels.length).toFixed(1)
+      : null;
+    
+    return { totalCheckIns: checkIns.length, avgEnergy, moods };
+  };
+
+  const priorityColors = {
+    high: "bg-destructive text-destructive-foreground",
+    medium: "bg-warning text-warning-foreground",
+    low: "bg-success text-success-foreground",
   };
 
   if (!task) return null;
@@ -164,24 +356,182 @@ const TaskWorkspace = () => {
           </Button>
         </div>
 
-        <div>
-          <h1 className="font-heading text-4xl font-bold">{task.title}</h1>
-          {task.description && (
-            <p className="text-muted-foreground mt-2">{task.description}</p>
-          )}
+        {/* Task Title - Editable */}
+        <Card>
+          <CardContent className="pt-6">
+            {!isEditingTitle ? (
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="font-heading text-4xl font-bold flex-1">{task.title}</h1>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsEditingTitle(true)}
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Input
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  className="text-2xl font-bold"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button onClick={saveTitle} size="sm">
+                    <Save className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditedTitle(task.title);
+                      setIsEditingTitle(false);
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Task Metadata & Indicators */}
+        <div className="grid md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium">Priority</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <div className="flex gap-2">
+                {["high", "medium", "low"].map((priority) => (
+                  <Button
+                    key={priority}
+                    onClick={() => updatePriority(priority)}
+                    variant={task.priority === priority ? "default" : "outline"}
+                    size="sm"
+                    className={task.priority === priority ? priorityColors[priority as keyof typeof priorityColors] : ""}
+                  >
+                    {priority}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Heart className="h-4 w-4" />
+                Mood Tracking
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {getMoodStats() ? (
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold">
+                    {getMoodEmoji(checkIns[0]?.mood || null)}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {getMoodStats()!.totalCheckIns} check-ins
+                  </p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No mood data yet</p>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Avg Energy
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {getMoodStats()?.avgEnergy ? (
+                <div className="space-y-1">
+                  <p className="text-2xl font-bold">{getMoodStats()!.avgEnergy}/10</p>
+                  <p className="text-xs text-muted-foreground">Average level</p>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No energy data yet</p>
+              )}
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Description - Editable */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="font-heading">Description</CardTitle>
+              {!isEditingDescription && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsEditingDescription(true)}
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {!isEditingDescription ? (
+              <p className="text-muted-foreground whitespace-pre-wrap">
+                {task.description || "No description yet. Click edit to add one."}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <Textarea
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  rows={4}
+                  placeholder="Add a detailed description..."
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <Button onClick={saveDescription} size="sm">
+                    <Save className="h-4 w-4 mr-2" />
+                    Save
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditedDescription(task.description || "");
+                      setIsEditingDescription(false);
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle className="font-heading">Progress</CardTitle>
+            <CardTitle className="font-heading flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Progress Tracker
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Task Progress</span>
-                <span>{task.progress}%</span>
+                <span className="font-bold">{task.progress}%</span>
               </div>
-              <Progress value={task.progress} />
+              <Progress value={task.progress} className="h-3" />
             </div>
             <div className="flex flex-wrap gap-2">
               {[0, 25, 50, 75, 100].map((value) => (
@@ -195,6 +545,68 @@ const TaskWorkspace = () => {
                 </Button>
               ))}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Notes Section - Rich Text */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="font-heading flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Notes
+              </CardTitle>
+              {!isEditingNotes && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsEditingNotes(true)}
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {!isEditingNotes ? (
+              <div className="min-h-[100px]">
+                {task.notes ? (
+                  <p className="whitespace-pre-wrap">{task.notes}</p>
+                ) : (
+                  <p className="text-muted-foreground italic">
+                    No notes yet. Click edit to add your thoughts, ideas, or important details.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Textarea
+                  value={editedNotes}
+                  onChange={(e) => setEditedNotes(e.target.value)}
+                  rows={8}
+                  placeholder="Add notes, ideas, links, or any important information about this task..."
+                  autoFocus
+                  className="font-mono text-sm"
+                />
+                <div className="flex gap-2">
+                  <Button onClick={saveNotes} size="sm">
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Notes
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setEditedNotes(task.notes || "");
+                      setIsEditingNotes(false);
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -233,9 +645,18 @@ const TaskWorkspace = () => {
           </CardContent>
         </Card>
 
+        {/* Check-in Timeline with Mood/Energy History */}
         <Card>
           <CardHeader>
-            <CardTitle className="font-heading">Check-in Timeline</CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="font-heading flex items-center gap-2">
+                <Heart className="h-5 w-5" />
+                Mood & Energy History
+              </CardTitle>
+              <Button onClick={() => setShowCheckIn(true)} size="sm">
+                Add Check-in
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             {checkIns.length === 0 ? (
@@ -246,24 +667,78 @@ const TaskWorkspace = () => {
                 </Button>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {checkIns.map((checkIn) => (
-                  <div key={checkIn.id} className="border-l-2 border-border pl-4 py-2">
-                    <div className="flex items-start justify-between">
+                  <div key={checkIn.id} className="border-l-4 border-primary/30 pl-4 py-3 bg-accent/30 rounded-r">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl">{getMoodEmoji(checkIn.mood)}</span>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(checkIn.created_at), "MMM d, h:mm a")}
+                          </p>
+                        </div>
+                        <p className="text-sm">{checkIn.response}</p>
+                        <div className="flex gap-4 text-xs">
+                          {checkIn.mood && (
+                            <Badge variant="outline" className="capitalize">
+                              {checkIn.mood}
+                            </Badge>
+                          )}
+                          {checkIn.energy_level && (
+                            <Badge variant="outline" className="flex items-center gap-1">
+                              <Zap className="h-3 w-3" />
+                              {checkIn.energy_level}/10
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Task Update History */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading flex items-center gap-2">
+              <History className="h-5 w-5" />
+              Update History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {taskHistory.length === 0 ? (
+              <p className="text-center py-8 text-muted-foreground">
+                No updates yet. Changes to this task will appear here.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {taskHistory.map((history) => (
+                  <div key={history.id} className="border-l-2 border-muted pl-4 py-2">
+                    <div className="flex items-start justify-between gap-2">
                       <div className="flex-1">
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(checkIn.created_at).toLocaleString()}
-                        </p>
-                        <p className="mt-1">{checkIn.response}</p>
-                        {checkIn.mood && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            Mood: {checkIn.mood}
-                          </p>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="secondary" className="text-xs capitalize">
+                            {history.field_changed}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(history.created_at), "MMM d, h:mm a")}
+                          </span>
+                        </div>
+                        {history.notes && (
+                          <p className="text-sm text-muted-foreground">{history.notes}</p>
                         )}
-                        {checkIn.energy_level && (
-                          <p className="text-sm text-muted-foreground">
-                            Energy: {checkIn.energy_level}/10
-                          </p>
+                        {history.old_value && history.new_value && (
+                          <div className="text-xs mt-1 space-y-1">
+                            <p className="text-muted-foreground">
+                              <span className="line-through">{history.old_value}</span>
+                              {" → "}
+                              <span className="font-medium">{history.new_value}</span>
+                            </p>
+                          </div>
                         )}
                       </div>
                     </div>
