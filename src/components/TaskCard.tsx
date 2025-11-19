@@ -39,7 +39,7 @@ const TaskCard = ({ task, onToggleComplete, onClick }: TaskCardProps) => {
 
   return (
     <Card
-      className={`cursor-pointer transition-all hover:shadow-md ${
+      className={`cursor-pointer transition-all duration-300 hover:shadow-[var(--shadow-lift)] hover:-translate-y-1 group ${
         isOverdue ? "border-destructive border-2" : ""
       }`}
       onClick={() => onClick(task.id)}
@@ -52,18 +52,18 @@ const TaskCard = ({ task, onToggleComplete, onClick }: TaskCardProps) => {
               onToggleComplete(task.id, task.status);
             }}
             onClick={(e) => e.stopPropagation()}
-            className="mt-1"
+            className="mt-1 transition-transform duration-200 group-hover:scale-110"
           />
           <div className="flex-1 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <h3
-                className={`font-heading font-semibold text-lg ${
-                  task.status === "completed" ? "line-through text-muted-foreground" : ""
+                className={`font-heading font-semibold text-lg transition-colors duration-200 ${
+                  task.status === "completed" ? "line-through text-muted-foreground" : "group-hover:text-primary"
                 }`}
               >
                 {task.title}
               </h3>
-              <Badge className={priorityColors[task.priority]}>{task.priority}</Badge>
+              <Badge className={`${priorityColors[task.priority]} transition-transform duration-200 group-hover:scale-105`}>{task.priority}</Badge>
             </div>
 
             {task.description && (
