@@ -220,17 +220,16 @@ const Dashboard = () => {
         </div>
 
         <Card className="bg-accent/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="font-heading text-sm font-medium flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
-                AI Insight
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm">You're doing great! Keep up the momentum! 🚀</p>
-            </CardContent>
-          </Card>
-        </div>
+          <CardHeader className="pb-3">
+            <CardTitle className="font-heading text-sm font-medium flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              AI Insight
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm">You're doing great! Keep up the momentum! 🚀</p>
+          </CardContent>
+        </Card>
 
         <AIRecommendations onTaskUpdate={fetchTasks} />
 
