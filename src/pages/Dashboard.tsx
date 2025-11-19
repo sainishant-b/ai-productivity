@@ -163,17 +163,17 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="font-heading text-2xl font-bold">AI Productivity Companion</h1>
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)}>
+            <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)} className="transition-all duration-200 hover:scale-105 hover:shadow-md">
               Check-in Now
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")}>
+            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")} className="transition-all duration-200 hover:scale-105 hover:shadow-md">
               <Calendar className="h-4 w-4 mr-2" />
               Calendar
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/settings")}>
+            <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="transition-all duration-200 hover:scale-105 hover:shadow-md">
               Settings
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleSignOut}>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="transition-all duration-200 hover:scale-110">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
@@ -182,22 +182,22 @@ const Dashboard = () => {
 
       <main className="container mx-auto px-4 py-8 space-y-6">
         <div className="grid md:grid-cols-3 gap-4">
-          <Card>
+          <Card className="shadow-[var(--shadow-md)] transition-all duration-300 hover:shadow-[var(--shadow-lg)] hover:-translate-y-1 group">
             <CardHeader className="pb-3">
               <CardTitle className="font-heading text-sm font-medium flex items-center gap-2">
-                <Flame className="h-4 w-4 text-success" />
+                <Flame className="h-4 w-4 text-success transition-transform duration-200 group-hover:scale-110" />
                 Current Streak
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{profile?.current_streak || 0} days</p>
+              <p className="text-3xl font-bold transition-transform duration-200 group-hover:scale-105">{profile?.current_streak || 0} days</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-[var(--shadow-md)] transition-all duration-300 hover:shadow-[var(--shadow-lg)] hover:-translate-y-1 group">
             <CardHeader className="pb-3">
               <CardTitle className="font-heading text-sm font-medium flex items-center gap-2">
-                <Clock className="h-4 w-4" />
+                <Clock className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                 Next Check-in
               </CardTitle>
             </CardHeader>
@@ -209,16 +209,17 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="shadow-[var(--shadow-md)] transition-all duration-300 hover:shadow-[var(--shadow-lg)] hover:-translate-y-1 group">
             <CardHeader className="pb-3">
               <CardTitle className="font-heading text-sm font-medium">Tasks Completed</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{completedCount}</p>
+              <p className="text-3xl font-bold transition-transform duration-200 group-hover:scale-105">{completedCount}</p>
             </CardContent>
           </Card>
+        </div>
 
-          <Card className="bg-accent/50">
+        <Card className="bg-accent/50">
             <CardHeader className="pb-3">
               <CardTitle className="font-heading text-sm font-medium flex items-center gap-2">
                 <Sparkles className="h-4 w-4" />
