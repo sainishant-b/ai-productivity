@@ -231,15 +231,14 @@ const Dashboard = () => {
           </Card>
         </div>
 
+        <AIRecommendations onTaskUpdate={fetchTasks} />
+
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-2xl font-bold">Your Tasks</h2>
-          <div className="flex gap-2">
-            <AIRecommendations onTaskUpdate={fetchTasks} />
-            <Button onClick={() => { setSelectedTask(null); setShowTaskDialog(true); }}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Task
-            </Button>
-          </div>
+          <Button onClick={() => { setSelectedTask(null); setShowTaskDialog(true); }}>
+            <Plus className="h-4 w-4 mr-2" />
+            New Task
+          </Button>
         </div>
 
         {loading ? (
