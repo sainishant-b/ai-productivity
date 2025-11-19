@@ -106,28 +106,35 @@ serve(async (req) => {
       streak: profile?.current_streak,
     };
 
-    const systemPrompt = `You are an intelligent task scheduling assistant. Analyze the user's tasks, work patterns, and energy levels to provide optimal scheduling recommendations.
+    const now = new Date();
+    const systemPrompt = `You are an AI productivity assistant specializing in task scheduling optimization.
+  
+Your goal is to recommend the DAILY TOP 5 tasks with optimal time slots based on:
+- Task priority, due dates, and estimated duration
+- User's energy patterns (identify peak productivity times from check-in history)
+- Historical mood and completion patterns
+- Current date/time context
 
-Consider:
-- Task priority, estimated duration, and deadlines
-- User's work hours (${profile?.work_hours_start} to ${profile?.work_hours_end})
-- Recent energy levels and mood patterns from check-ins
-- Task categories and their typical cognitive demands
-- Time of day best suited for different types of work
+SMART MATCHING RULES:
+- Match high-priority/complex tasks with peak energy times
+- Schedule quick wins during low energy periods
+- Respect work hours preferences (${profile?.work_hours_start} to ${profile?.work_hours_end})
+- Balance workload across the day
 
-Provide recommendations using the suggest_tasks tool. For each task, suggest an optimal time slot and explain your reasoning based on the user's patterns.`;
+Always provide:
+1. Top 5 task recommendations for TODAY with specific time slots
+2. Brief, actionable reasoning for each recommendation (1-2 sentences max)
+3. Warnings about: overdue tasks, schedule conflicts, workload concerns
+4. Overall insights about the user's schedule and patterns (2-3 key points)`;
 
-    const userPrompt = `Here's my current situation:
+    const userPrompt = `Analyze and recommend scheduling for TODAY (${now.toLocaleDateString()}):
 
-Tasks: ${JSON.stringify(context.tasks, null, 2)}
+USER DATA:
+${JSON.stringify(context, null, 2)}
 
-Work Schedule: ${context.workHours.start} - ${context.workHours.end} (${context.workHours.timezone})
+Current time: ${now.toLocaleTimeString()}
 
-Recent Energy/Mood Patterns: ${JSON.stringify(context.recentCheckIns, null, 2)}
-
-Current Streak: ${context.streak} days
-
-Please analyze my tasks and suggest optimal scheduling for incomplete tasks. Focus on tasks that need scheduling or rescheduling.`;
+Focus on the top 5 most important tasks for today. Consider energy patterns from check-ins, task urgency, and optimal timing.`;
 
     console.log('Calling Lovable AI...');
 
@@ -148,36 +155,50 @@ Please analyze my tasks and suggest optimal scheduling for incomplete tasks. Foc
             type: 'function',
             function: {
               name: 'suggest_task_schedule',
-              description: 'Provide scheduling recommendations for tasks',
+              description: 'Provide daily top 5 task recommendations with smart time matching',
               parameters: {
                 type: 'object',
                 properties: {
-                  recommendations: {
+                  recommendedTasks: {
                     type: 'array',
+                    description: 'Top 5 tasks recommended for today with optimal time slots (max 5 items)',
+                    maxItems: 5,
                     items: {
                       type: 'object',
                       properties: {
-                        task_id: { type: 'string', description: 'ID of the task' },
-                        task_title: { type: 'string', description: 'Title of the task' },
-                        suggested_date: { type: 'string', description: 'Suggested date in ISO format' },
-                        suggested_time_slot: { type: 'string', description: 'e.g., "9:00 AM - 10:30 AM"' },
-                        reasoning: { type: 'string', description: 'Explanation for this recommendation' },
-                        confidence: { type: 'string', enum: ['high', 'medium', 'low'], description: 'Confidence in recommendation' },
+                        taskId: { type: 'string', description: 'UUID of the task' },
+                        title: { type: 'string', description: 'Task title' },
+                        suggestedTime: { type: 'string', description: 'Time slot (e.g., "9:00 AM - 11:00 AM")' },
+                        suggestedDate: { type: 'string', description: 'Date in YYYY-MM-DD format' },
+                        reasoning: { type: 'string', description: 'Brief explanation (1-2 sentences)' },
+                        confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
+                        priority: { type: 'string', enum: ['high', 'medium', 'low'] }
                       },
-                      required: ['task_id', 'task_title', 'suggested_date', 'suggested_time_slot', 'reasoning', 'confidence'],
-                      additionalProperties: false,
-                    },
+                      required: ['taskId', 'title', 'suggestedTime', 'suggestedDate', 'reasoning', 'confidence', 'priority']
+                    }
                   },
-                  general_insights: {
-                    type: 'string',
-                    description: 'Overall insights about the schedule and work patterns',
+                  insights: {
+                    type: 'array',
+                    description: 'Key insights about schedule and patterns (2-3 items)',
+                    items: { type: 'string' }
                   },
+                  warnings: {
+                    type: 'array',
+                    description: 'Important warnings about schedule issues',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        type: { type: 'string', enum: ['overdue', 'conflict', 'overload', 'other'] },
+                        message: { type: 'string' }
+                      },
+                      required: ['type', 'message']
+                    }
+                  }
                 },
-                required: ['recommendations', 'general_insights'],
-                additionalProperties: false,
-              },
-            },
-          },
+                required: ['recommendedTasks', 'insights', 'warnings']
+              }
+            }
+          }
         ],
         tool_choice: { type: 'function', function: { name: 'suggest_task_schedule' } },
       }),
@@ -200,32 +221,30 @@ Please analyze my tasks and suggest optimal scheduling for incomplete tasks. Foc
         );
       }
       
-      throw new Error(`AI API error: ${aiResponse.status}`);
+      throw new Error(`AI API error: ${aiResponse.status} ${errorText}`);
     }
 
-    const aiData = await aiResponse.json();
-    console.log('AI response received:', JSON.stringify(aiData, null, 2));
+    const aiResponseData = await aiResponse.json();
+    console.log('AI response received:', JSON.stringify(aiResponseData));
 
-    // Extract tool call result
-    const toolCall = aiData.choices?.[0]?.message?.tool_calls?.[0];
-    if (!toolCall) {
-      throw new Error('No tool call in AI response');
+    const toolCall = aiResponseData.choices[0]?.message?.tool_calls?.[0];
+    if (!toolCall || toolCall.function.name !== 'suggest_task_schedule') {
+      throw new Error('AI did not provide recommendations');
     }
 
-    const recommendations = JSON.parse(toolCall.function.arguments);
-    console.log('Recommendations generated:', recommendations);
+    const result = JSON.parse(toolCall.function.arguments);
+    console.log('AI Recommendations generated:', result);
 
-    return new Response(JSON.stringify(recommendations), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  } catch (error) {
+    return new Response(
+      JSON.stringify(result),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error: any) {
     console.error('Error in task-recommendations function:', error);
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
+      JSON.stringify({ error: error.message || 'Internal server error' }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

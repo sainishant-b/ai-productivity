@@ -6,18 +6,25 @@ import { Sparkles, Clock, CheckCircle2, XCircle, Loader2, Calendar, RefreshCw } 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface Recommendation {
-  task_id: string;
-  task_title: string;
-  suggested_date: string;
-  suggested_time_slot: string;
+interface RecommendedTask {
+  taskId: string;
+  title: string;
+  suggestedTime: string;
+  suggestedDate: string;
   reasoning: string;
   confidence: 'high' | 'medium' | 'low';
+  priority: 'high' | 'medium' | 'low';
+}
+
+interface Warning {
+  type: 'overdue' | 'conflict' | 'overload' | 'other';
+  message: string;
 }
 
 interface RecommendationsData {
-  recommendations: Recommendation[];
-  general_insights: string;
+  recommendedTasks: RecommendedTask[];
+  insights: string[];
+  warnings: Warning[];
 }
 
 interface AIRecommendationsProps {
@@ -27,7 +34,7 @@ interface AIRecommendationsProps {
 export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<RecommendationsData | null>(null);
-  const [acceptedTasks, setAcceptedTasks] = useState<Set<string>>(new Set());
+  const [scheduledTasks, setScheduledTasks] = useState<Set<string>>(new Set());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -56,53 +63,58 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
     }
   };
 
-  const acceptRecommendation = async (rec: Recommendation) => {
+  const scheduleTask = async (task: RecommendedTask) => {
     try {
       const { error } = await supabase
         .from('tasks')
         .update({
-          due_date: rec.suggested_date,
+          due_date: task.suggestedDate,
         })
-        .eq('id', rec.task_id);
+        .eq('id', task.taskId);
 
       if (error) throw error;
 
-      setAcceptedTasks(prev => new Set(prev).add(rec.task_id));
+      setScheduledTasks(prev => new Set(prev).add(task.taskId));
       toast({
-        title: 'Success',
-        description: `Task "${rec.task_title}" scheduled for ${new Date(rec.suggested_date).toLocaleDateString()}`,
+        title: 'Task Scheduled',
+        description: `"${task.title}" scheduled for ${task.suggestedTime}`,
       });
       onTaskUpdate();
     } catch (error: any) {
-      console.error('Error accepting recommendation:', error);
+      console.error('Error scheduling task:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update task',
+        description: 'Failed to schedule task',
         variant: 'destructive',
       });
     }
   };
 
-  const rejectRecommendation = (taskId: string) => {
-    setAcceptedTasks(prev => {
-      const next = new Set(prev);
-      next.add(taskId); // Mark as processed so it doesn't show anymore
-      return next;
-    });
+  const dismissTask = (taskId: string) => {
+    setScheduledTasks(prev => new Set(prev).add(taskId));
   };
 
-  const getConfidenceBadge = (confidence: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'outline'; label: string }> = {
-      high: { variant: 'default', label: 'High Confidence' },
-      medium: { variant: 'secondary', label: 'Medium Confidence' },
-      low: { variant: 'outline', label: 'Low Confidence' },
+  const getPriorityBadge = (priority: string) => {
+    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive'; label: string }> = {
+      high: { variant: 'destructive', label: 'High' },
+      medium: { variant: 'default', label: 'Medium' },
+      low: { variant: 'secondary', label: 'Low' },
     };
-    const config = variants[confidence] || variants.medium;
+    const config = variants[priority] || variants.medium;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  const activeRecommendations = recommendations?.recommendations.filter(
-    rec => !acceptedTasks.has(rec.task_id)
+  const getWarningIcon = (type: string) => {
+    switch (type) {
+      case 'overdue': return '⚠️';
+      case 'conflict': return '⚡';
+      case 'overload': return '🔥';
+      default: return 'ℹ️';
+    }
+  };
+
+  const activeTasks = recommendations?.recommendedTasks.filter(
+    task => !scheduledTasks.has(task.taskId)
   ) || [];
 
   if (isLoading) {
@@ -131,10 +143,10 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
           <div>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
-              AI Scheduling Recommendations
+              Daily Top 5 Recommendations
             </CardTitle>
             <CardDescription>
-              Based on your work patterns, energy levels, and task priorities
+              Smart task matching based on your energy patterns and priorities
             </CardDescription>
           </div>
           <Button
@@ -144,65 +156,86 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
             className="gap-2"
           >
             <RefreshCw className="h-4 w-4" />
-            Refresh
+            Regenerate
           </Button>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* General Insights */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Insights</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              {recommendations.general_insights}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Warnings */}
+        {recommendations.warnings && recommendations.warnings.length > 0 && (
+          <div className="space-y-2">
+            {recommendations.warnings.map((warning, idx) => (
+              <div
+                key={idx}
+                className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20"
+              >
+                <span className="text-lg">{getWarningIcon(warning.type)}</span>
+                <p className="text-sm text-foreground flex-1">{warning.message}</p>
+              </div>
+            ))}
+          </div>
+        )}
 
-        {/* Recommendations */}
+        {/* Insights */}
+        {recommendations.insights && recommendations.insights.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Key Insights</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {recommendations.insights.map((insight, idx) => (
+                  <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2">
+                    <Sparkles className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
+                    <span>{insight}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Task Recommendations */}
         <div className="space-y-4">
           <h3 className="text-sm font-medium">
-            {activeRecommendations.length > 0 
-              ? `${activeRecommendations.length} Task${activeRecommendations.length !== 1 ? 's' : ''} to Schedule`
-              : 'All recommendations processed'}
+            {activeTasks.length > 0 
+              ? `${activeTasks.length} Recommended Task${activeTasks.length !== 1 ? 's' : ''} for Today`
+              : 'All tasks scheduled'}
           </h3>
-          {activeRecommendations.map((rec) => (
-            <Card key={rec.task_id} className="border-l-4 border-l-primary">
+          {activeTasks.map((task, idx) => (
+            <Card key={task.taskId} className="border-l-4 border-l-primary">
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <CardTitle className="text-base">{rec.task_title}</CardTitle>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                        {idx + 1}
+                      </span>
+                      <CardTitle className="text-base">{task.title}</CardTitle>
+                    </div>
                     <CardDescription className="flex items-center gap-2 mt-2">
-                      <Calendar className="h-3 w-3" />
-                      {new Date(rec.suggested_date).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                      <Clock className="h-3 w-3 ml-2" />
-                      {rec.suggested_time_slot}
+                      <Clock className="h-3 w-3" />
+                      {task.suggestedTime}
                     </CardDescription>
                   </div>
-                  {getConfidenceBadge(rec.confidence)}
+                  {getPriorityBadge(task.priority)}
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="bg-muted/50 p-3 rounded-md">
-                  <p className="text-sm text-foreground">{rec.reasoning}</p>
+                  <p className="text-sm text-foreground">{task.reasoning}</p>
                 </div>
                 <div className="flex gap-2">
                   <Button
-                    onClick={() => acceptRecommendation(rec)}
+                    onClick={() => scheduleTask(task)}
                     size="sm"
                     className="gap-2"
                   >
                     <CheckCircle2 className="h-4 w-4" />
-                    Accept
+                    Schedule This
                   </Button>
                   <Button
-                    onClick={() => rejectRecommendation(rec.task_id)}
+                    onClick={() => dismissTask(task.taskId)}
                     size="sm"
                     variant="outline"
                     className="gap-2"
@@ -216,10 +249,10 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
           ))}
         </div>
 
-        {activeRecommendations.length === 0 && (
+        {activeTasks.length === 0 && (
           <div className="text-center py-8 text-muted-foreground">
             <CheckCircle2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>All recommendations have been processed</p>
+            <p>All recommendations have been scheduled</p>
           </div>
         )}
       </CardContent>
