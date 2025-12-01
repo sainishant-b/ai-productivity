@@ -105,11 +105,12 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
   };
 
   const getWarningIcon = (type: string) => {
+    const iconClass = "h-4 w-4";
     switch (type) {
-      case 'overdue': return '⚠️';
-      case 'conflict': return '⚡';
-      case 'overload': return '🔥';
-      default: return 'ℹ️';
+      case 'overdue': return <XCircle className={iconClass} />;
+      case 'conflict': return <Clock className={iconClass} />;
+      case 'overload': return <Sparkles className={iconClass} />;
+      default: return <Sparkles className={iconClass} />;
     }
   };
 
@@ -167,9 +168,9 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
             {recommendations.warnings.map((warning, idx) => (
               <div
                 key={idx}
-                className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 transition-all duration-200 hover:shadow-md hover:bg-destructive/15 hover:-translate-y-0.5"
+                className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 transition-all duration-300 hover:shadow-md hover:bg-destructive/15"
               >
-                <span className="text-lg">{getWarningIcon(warning.type)}</span>
+                <div className="text-destructive mt-0.5">{getWarningIcon(warning.type)}</div>
                 <p className="text-sm text-foreground flex-1">{warning.message}</p>
               </div>
             ))}
