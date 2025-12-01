@@ -88,8 +88,7 @@ export default {
         "streak-pulse": "streak-pulse 2s infinite",
       },
       fontFamily: {
-        sans: ['Raleway', 'sans-serif'],
-        heading: ['Playfair Display', 'serif'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif'],
       },
     },
   },
