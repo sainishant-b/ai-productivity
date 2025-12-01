@@ -8,45 +8,45 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Claude-inspired Design System */
+    /* Claude-inspired Monochrome Design System */
     --background: 0 0% 98%;
-    --foreground: 20 8% 20%;
+    --foreground: 0 0% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 20 8% 20%;
+    --card-foreground: 0 0% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 20 8% 20%;
+    --popover-foreground: 0 0% 15%;
 
-    /* Primary - Soft Amber/Orange */
-    --primary: 25 85% 55%;
+    /* Primary - Black */
+    --primary: 0 0% 10%;
     --primary-foreground: 0 0% 100%;
-    --primary-hover: 25 85% 48%;
+    --primary-hover: 0 0% 20%;
 
-    /* Success - Muted Green */
-    --success: 142 45% 50%;
+    /* Success - Dark Gray */
+    --success: 0 0% 25%;
     --success-foreground: 0 0% 100%;
 
-    /* Warning - Amber */
-    --warning: 38 92% 50%;
+    /* Warning - Medium Gray */
+    --warning: 0 0% 35%;
     --warning-foreground: 0 0% 100%;
 
-    /* Destructive - Soft Red */
-    --destructive: 0 70% 55%;
+    /* Destructive - Charcoal */
+    --destructive: 0 0% 20%;
     --destructive-foreground: 0 0% 100%;
 
-    --secondary: 20 8% 95%;
-    --secondary-foreground: 20 8% 20%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 15%;
 
-    --muted: 20 8% 94%;
-    --muted-foreground: 20 5% 46%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
 
-    --accent: 25 85% 96%;
-    --accent-foreground: 20 8% 20%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 15%;
 
-    --border: 20 6% 88%;
-    --input: 20 6% 88%;
-    --ring: 25 85% 55%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 0 0% 10%;
 
     --radius: 0.75rem;
 
@@ -54,7 +54,7 @@ All colors MUST be HSL.
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-bounce: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
     --glass-bg: 0 0% 100% / 0.7;
-    --glass-border: 20 6% 88% / 0.5;
+    --glass-border: 0 0% 90% / 0.5;
     
     /* Refined shadows */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.03);
@@ -66,44 +66,44 @@ All colors MUST be HSL.
   }
 
   .dark {
-    /* Claude-inspired Dark Mode */
-    --background: 20 8% 8%;
-    --foreground: 20 5% 92%;
+    /* Claude-inspired Monochrome Dark Mode */
+    --background: 0 0% 8%;
+    --foreground: 0 0% 92%;
 
-    --card: 20 8% 11%;
-    --card-foreground: 20 5% 92%;
+    --card: 0 0% 11%;
+    --card-foreground: 0 0% 92%;
 
-    --popover: 20 8% 11%;
-    --popover-foreground: 20 5% 92%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 0 0% 92%;
 
-    --primary: 25 85% 55%;
-    --primary-foreground: 0 0% 100%;
-    --primary-hover: 25 85% 62%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 8%;
+    --primary-hover: 0 0% 85%;
 
-    --success: 142 45% 50%;
-    --success-foreground: 0 0% 100%;
+    --success: 0 0% 75%;
+    --success-foreground: 0 0% 8%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning: 0 0% 65%;
+    --warning-foreground: 0 0% 8%;
 
-    --destructive: 0 70% 55%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 0 0% 80%;
+    --destructive-foreground: 0 0% 8%;
 
-    --secondary: 20 8% 16%;
-    --secondary-foreground: 20 5% 92%;
+    --secondary: 0 0% 16%;
+    --secondary-foreground: 0 0% 92%;
 
-    --muted: 20 8% 16%;
-    --muted-foreground: 20 5% 60%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 25 85% 20%;
-    --accent-foreground: 20 5% 92%;
+    --accent: 0 0% 18%;
+    --accent-foreground: 0 0% 92%;
 
-    --border: 20 8% 22%;
-    --input: 20 8% 22%;
-    --ring: 25 85% 55%;
+    --border: 0 0% 22%;
+    --input: 0 0% 22%;
+    --ring: 0 0% 95%;
     
-    --glass-bg: 20 8% 11% / 0.7;
-    --glass-border: 20 8% 22% / 0.5;
+    --glass-bg: 0 0% 11% / 0.7;
+    --glass-border: 0 0% 22% / 0.5;
     
     /* Refined shadows - Dark Mode */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.5);
