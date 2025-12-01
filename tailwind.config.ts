@@ -88,7 +88,8 @@ export default {
         "streak-pulse": "streak-pulse 2s infinite",
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica Neue', 'sans-serif'],
+        sans: ['IBM Plex Sans', 'sans-serif'],
+        heading: ['Space Grotesk', 'sans-serif'],
       },
     },
   },
