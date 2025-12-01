@@ -31,7 +31,7 @@ const Dashboard = () => {
 
   const { formatNextCheckIn, isWorkHours } = useCheckInScheduler(profile, () => {
     if (!showCheckIn) {
-      toast.info("Time for a check-in! 📝", {
+      toast.info("Time for a check-in", {
         duration: 5000,
         action: {
           label: "Check-in",
@@ -117,7 +117,7 @@ const Dashboard = () => {
       .eq("id", taskId);
     
     if (error) toast.error("Failed to update task");
-    else if (newStatus === "completed") toast.success("Task completed! 🎉");
+    else if (newStatus === "completed") toast.success("Task completed");
     
     fetchTasks();
   };
@@ -219,15 +219,15 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        <Card className="bg-accent/50">
+        <Card className="bg-accent/30 border-accent/50">
           <CardHeader className="pb-3">
-            <CardTitle className="font-heading text-sm font-medium flex items-center gap-2">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Sparkles className="h-4 w-4" />
               AI Insight
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">You're doing great! Keep up the momentum! 🚀</p>
+            <p className="text-sm text-muted-foreground">You're maintaining strong momentum across your tasks</p>
           </CardContent>
         </Card>
 
