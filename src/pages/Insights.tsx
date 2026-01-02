@@ -107,31 +107,33 @@ const Insights = () => {
   const getWeeks = () => {
     const weeks: TaskCompletionData[][] = [];
     let currentWeek: TaskCompletionData[] = [];
-    
+
     completionData.forEach((day, index) => {
       const dayOfWeek = new Date(day.date).getDay();
-      
+
       if (index === 0) {
         // Pad the first week with empty days
         for (let i = 0; i < dayOfWeek; i++) {
           currentWeek.push({ date: "", count: -1 });
         }
       }
-      
+
       currentWeek.push(day);
-      
-      if (dayOfWeek === 6 || index === completionData.length - 1) {
-        // Pad the last week if needed
-        if (index === completionData.length - 1 && dayOfWeek !== 6) {
-          for (let i = dayOfWeek + 1; i <= 6; i++) {
-            currentWeek.push({ date: "", count: -1 });
-          }
-        }
+
+      if (dayOfWeek === 6) {
         weeks.push(currentWeek);
         currentWeek = [];
       }
     });
-    
+
+    // Pad the last incomplete week
+    if (currentWeek.length > 0) {
+      while (currentWeek.length < 7) {
+        currentWeek.push({ date: "", count: -1 });
+      }
+      weeks.push(currentWeek);
+    }
+
     return weeks;
   };
 
@@ -282,6 +284,8 @@ const Insights = () => {
           <CardContent>
             <div className="overflow-x-auto">
               <div className="min-w-[800px] w-max">
+                {/* Month labels */}
+                <div className="flex mb-2 text-xs text-muted-foreground relative h-4">
                   <div className="w-10" />
                   <div className="flex-1 relative">
                     {monthLabels.map((label, i) => (
@@ -295,7 +299,7 @@ const Insights = () => {
                     ))}
                   </div>
                 </div>
-                
+
                 {/* Heatmap grid */}
                 <div className="flex gap-[3px]">
                   {/* Day labels */}
