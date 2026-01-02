@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, CheckCircle2, Flame, Trophy, TrendingUp } from "lucide-react";
-import { format, subDays, startOfDay, eachDayOfInterval } from "date-fns";
+import { ArrowLeft, CheckCircle2, Flame, Trophy, TrendingUp, ChevronLeft, ChevronRight } from "lucide-react";
+import { format, startOfYear, endOfYear, eachDayOfInterval, getMonth } from "date-fns";
 
 interface TaskCompletionData {
   date: string;
@@ -18,6 +18,7 @@ const Insights = () => {
   const [totalCompleted, setTotalCompleted] = useState(0);
   const [completionData, setCompletionData] = useState<TaskCompletionData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
@@ -37,9 +38,11 @@ const Insights = () => {
     if (user) {
       fetchData();
     }
-  }, [user]);
+  }, [user, selectedYear]);
 
   const fetchData = async () => {
+    setLoading(true);
+    
     // Fetch profile for streak data
     const { data: profileData } = await supabase
       .from("profiles")
@@ -57,13 +60,16 @@ const Insights = () => {
     
     setTotalCompleted(count || 0);
 
-    // Fetch task completion data for heatmap (last 365 days)
-    const startDate = subDays(new Date(), 364);
+    // Fetch task completion data for heatmap (selected year)
+    const yearStart = startOfYear(new Date(selectedYear, 0, 1));
+    const yearEnd = endOfYear(new Date(selectedYear, 0, 1));
+    
     const { data: tasks } = await supabase
       .from("tasks")
       .select("completed_at")
       .eq("status", "completed")
-      .gte("completed_at", startDate.toISOString())
+      .gte("completed_at", yearStart.toISOString())
+      .lte("completed_at", yearEnd.toISOString())
       .not("completed_at", "is", null);
 
     // Process tasks into daily counts
@@ -75,8 +81,8 @@ const Insights = () => {
       }
     });
 
-    // Create array for all days
-    const allDays = eachDayOfInterval({ start: startDate, end: new Date() });
+    // Create array for all days in the year
+    const allDays = eachDayOfInterval({ start: yearStart, end: yearEnd });
     const completionArray = allDays.map((day) => ({
       date: format(day, "yyyy-MM-dd"),
       count: dailyCounts[format(day, "yyyy-MM-dd")] || 0,
@@ -112,6 +118,12 @@ const Insights = () => {
       currentWeek.push(day);
       
       if (dayOfWeek === 6 || index === completionData.length - 1) {
+        // Pad the last week if needed
+        if (index === completionData.length - 1 && dayOfWeek !== 6) {
+          for (let i = dayOfWeek + 1; i <= 6; i++) {
+            currentWeek.push({ date: "", count: -1 });
+          }
+        }
         weeks.push(currentWeek);
         currentWeek = [];
       }
@@ -120,8 +132,34 @@ const Insights = () => {
     return weeks;
   };
 
+  // Get month label positions based on actual data
+  const getMonthLabels = () => {
+    const labels: { month: string; position: number }[] = [];
+    let currentMonth = -1;
+    let weekIndex = 0;
+    
+    const weeks = getWeeks();
+    weeks.forEach((week, wIndex) => {
+      week.forEach((day) => {
+        if (day.date) {
+          const month = getMonth(new Date(day.date));
+          if (month !== currentMonth) {
+            currentMonth = month;
+            labels.push({
+              month: format(new Date(day.date), "MMM"),
+              position: wIndex
+            });
+          }
+        }
+      });
+    });
+    
+    return labels;
+  };
+
   const weeks = getWeeks();
-  const monthLabels = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthLabels = getMonthLabels();
+  const currentYear = new Date().getFullYear();
 
   if (loading) {
     return (
@@ -209,26 +247,58 @@ const Insights = () => {
         {/* Calendar Heatmap */}
         <Card className="shadow-[var(--shadow-md)]">
           <CardHeader>
-            <CardTitle className="font-heading text-lg font-semibold">Activity Heatmap</CardTitle>
-            <p className="text-sm text-muted-foreground">Your task completion activity over the past year</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="font-heading text-lg font-semibold">Activity Heatmap</CardTitle>
+                <p className="text-sm text-muted-foreground">Your task completion activity</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSelectedYear(selectedYear - 1)}
+                  className="h-8 w-8"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="font-heading font-semibold text-lg min-w-[60px] text-center">
+                  {selectedYear}
+                </span>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSelectedYear(selectedYear + 1)}
+                  disabled={selectedYear >= currentYear}
+                  className="h-8 w-8"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
               <div className="min-w-[800px]">
                 {/* Month labels */}
-                <div className="flex mb-2 text-xs text-muted-foreground">
-                  <div className="w-8" />
-                  {monthLabels.map((month, i) => (
-                    <div key={month} className="flex-1 text-center">
-                      {month}
-                    </div>
-                  ))}
+                <div className="flex mb-2 text-xs text-muted-foreground relative h-4">
+                  <div className="w-10" />
+                  <div className="flex-1 relative">
+                    {monthLabels.map((label, i) => (
+                      <span
+                        key={i}
+                        className="absolute"
+                        style={{ left: `${(label.position / weeks.length) * 100}%` }}
+                      >
+                        {label.month}
+                      </span>
+                    ))}
+                  </div>
                 </div>
                 
                 {/* Heatmap grid */}
                 <div className="flex gap-[3px]">
                   {/* Day labels */}
-                  <div className="flex flex-col gap-[3px] text-xs text-muted-foreground pr-2">
+                  <div className="flex flex-col gap-[3px] text-xs text-muted-foreground pr-2 w-8">
                     <div className="h-[12px]" />
                     <div className="h-[12px] flex items-center">Mon</div>
                     <div className="h-[12px]" />
