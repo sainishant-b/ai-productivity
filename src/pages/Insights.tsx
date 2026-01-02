@@ -281,9 +281,7 @@ const Insights = () => {
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
-              <div className="min-w-[800px]">
-                {/* Month labels */}
-                <div className="flex mb-2 text-xs text-muted-foreground relative h-4">
+              <div className="min-w-[800px] w-max">
                   <div className="w-10" />
                   <div className="flex-1 relative">
                     {monthLabels.map((label, i) => (
