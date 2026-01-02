@@ -63,6 +63,7 @@ const Insights = () => {
     // Fetch task completion data for heatmap (selected year)
     const yearStart = startOfYear(new Date(selectedYear, 0, 1));
     const yearEnd = endOfYear(new Date(selectedYear, 0, 1));
+    const today = new Date();
     
     const { data: tasks } = await supabase
       .from("tasks")
@@ -81,18 +82,23 @@ const Insights = () => {
       }
     });
 
-    // Create array for all days in the year
+    // Create array for ALL days in the year (always show full year)
     const allDays = eachDayOfInterval({ start: yearStart, end: yearEnd });
-    const completionArray = allDays.map((day) => ({
-      date: format(day, "yyyy-MM-dd"),
-      count: dailyCounts[format(day, "yyyy-MM-dd")] || 0,
-    }));
+    const completionArray = allDays.map((day) => {
+      const dateStr = format(day, "yyyy-MM-dd");
+      const isFuture = day > today;
+      return {
+        date: dateStr,
+        count: isFuture ? -2 : (dailyCounts[dateStr] || 0), // -2 for future dates
+      };
+    });
 
     setCompletionData(completionArray);
     setLoading(false);
   };
 
   const getHeatmapColor = (count: number) => {
+    if (count === -2) return "bg-muted/10"; // Future dates - very faint
     if (count === 0) return "bg-muted/30";
     if (count === 1) return "bg-success/30";
     if (count === 2) return "bg-success/50";
