@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Clock, Moon, Sun, User } from "lucide-react";
+import { Clock, Moon, Sun, User, Bell, BellOff, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -14,6 +15,8 @@ const Settings = () => {
   const [workHoursEnd, setWorkHoursEnd] = useState("17:00");
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  
+  const { permission, isSupported, requestPermission, sendNotification } = useNotifications();
 
   useEffect(() => {
     loadSettings();
@@ -64,6 +67,14 @@ const Settings = () => {
     setTheme(newTheme);
     localStorage.setItem("theme", newTheme);
     document.documentElement.classList.toggle("dark", newTheme === "dark");
+  };
+
+  const handleTestNotification = () => {
+    sendNotification({
+      title: "Test Notification 🔔",
+      body: "Notifications are working! You'll receive check-in reminders and task alerts.",
+      tag: "test-notification",
+    });
   };
 
   const handleSignOut = async () => {
@@ -137,6 +148,64 @@ const Settings = () => {
             </Button>
           </CardContent>
         </Card>
+
+        {isSupported && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="font-heading flex items-center gap-2">
+                {permission === "granted" ? (
+                  <Bell className="h-5 w-5 text-success" />
+                ) : permission === "denied" ? (
+                  <BellOff className="h-5 w-5 text-destructive" />
+                ) : (
+                  <Bell className="h-5 w-5" />
+                )}
+                Notifications
+              </CardTitle>
+              <CardDescription>
+                Get notified about check-ins and task reminders
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {permission === "granted" ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-success">
+                    <Check className="h-4 w-4" />
+                    <span className="text-sm font-medium">Notifications are enabled</span>
+                  </div>
+                  <div className="text-sm text-muted-foreground space-y-1">
+                    <p>You'll receive notifications for:</p>
+                    <ul className="list-disc list-inside ml-2 space-y-1">
+                      <li>Check-in reminders during work hours</li>
+                      <li>Tasks due today</li>
+                      <li>Overdue task alerts</li>
+                      <li>Upcoming task reminders</li>
+                    </ul>
+                  </div>
+                  <Button onClick={handleTestNotification} variant="outline" className="w-full md:w-auto">
+                    Send Test Notification
+                  </Button>
+                </div>
+              ) : permission === "denied" ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-destructive">Notifications are blocked</p>
+                  <p className="text-sm text-muted-foreground">
+                    To enable notifications, click the lock icon in your browser's address bar and allow notifications for this site.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">
+                    Enable notifications to stay on track with check-ins and never miss a deadline.
+                  </p>
+                  <Button onClick={requestPermission} className="w-full md:w-auto">
+                    Enable Notifications
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           <CardHeader>
