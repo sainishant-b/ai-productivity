@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getNotificationSender } from "@/hooks/useNotifications";
 
 interface Profile {
   work_hours_start: string;
@@ -11,6 +12,7 @@ interface Profile {
 export const useCheckInScheduler = (profile: Profile | null, onCheckInDue: () => void) => {
   const [nextCheckIn, setNextCheckIn] = useState<Date | null>(null);
   const [isWorkHours, setIsWorkHours] = useState(false);
+  const lastNotificationTime = useRef<number>(0);
 
   const calculateCheckInTimes = useCallback((profile: Profile): Date[] => {
     if (!profile) return [];
@@ -90,6 +92,27 @@ export const useCheckInScheduler = (profile: Profile | null, onCheckInDue: () =>
       if (!lastCheckIn || (now.getTime() - lastCheckIn.getTime() > minInterval)) {
         // Check if next check-in time has passed
         if (now >= nextTime) {
+          // Send push notification (throttled to prevent spam)
+          const timeSinceLastNotification = now.getTime() - lastNotificationTime.current;
+          if (timeSinceLastNotification > 60000) { // At least 1 minute between notifications
+            lastNotificationTime.current = now.getTime();
+            
+            const notificationSender = getNotificationSender();
+            if (notificationSender) {
+              notificationSender.sendNotification({
+                title: "Time for a check-in! ✨",
+                body: "How's your progress going? Take a moment to reflect.",
+                tag: "check-in-reminder",
+                data: { type: "check-in" },
+                actions: [
+                  { action: "checkin", title: "Check-in Now" },
+                  { action: "dismiss", title: "Later" }
+                ],
+                requireInteraction: true,
+              });
+            }
+          }
+          
           onCheckInDue();
         }
       }

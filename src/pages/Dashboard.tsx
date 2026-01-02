@@ -9,7 +9,10 @@ import TaskCard from "@/components/TaskCard";
 import TaskDialog from "@/components/TaskDialog";
 import CheckInModal from "@/components/CheckInModal";
 import AIRecommendations from "@/components/AIRecommendations";
+import NotificationPrompt from "@/components/NotificationPrompt";
 import { useCheckInScheduler } from "@/hooks/useCheckInScheduler";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useTaskReminders } from "@/hooks/useTaskReminders";
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -20,6 +23,9 @@ const Dashboard = () => {
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(true);
+  
+  const { permission, sendNotification } = useNotifications();
 
   const checkInQuestions = [
     "What are you working on right now?",
@@ -41,6 +47,8 @@ const Dashboard = () => {
     }
   });
 
+  // Task reminders for due/overdue tasks
+  useTaskReminders({ tasks, enabled: permission === "granted" });
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
@@ -54,6 +62,16 @@ const Dashboard = () => {
 
     return () => subscription.unsubscribe();
   }, [navigate]);
+
+  // Listen for notification clicks to open check-in
+  useEffect(() => {
+    const handleOpenCheckIn = () => {
+      setShowCheckIn(true);
+    };
+    
+    window.addEventListener("open-checkin", handleOpenCheckIn);
+    return () => window.removeEventListener("open-checkin", handleOpenCheckIn);
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -234,6 +252,10 @@ const Dashboard = () => {
             <p className="text-sm text-muted-foreground">You're maintaining strong momentum across your tasks</p>
           </CardContent>
         </Card>
+
+        {showNotificationPrompt && permission === "default" && (
+          <NotificationPrompt onDismiss={() => setShowNotificationPrompt(false)} />
+        )}
 
         <AIRecommendations onTaskUpdate={fetchTasks} />
 
