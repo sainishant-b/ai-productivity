@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Flame, LogOut, Sparkles, Clock, Calendar } from "lucide-react";
+import { Plus, Flame, LogOut, Sparkles, Clock, Calendar, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 import TaskCard from "@/components/TaskCard";
 import TaskDialog from "@/components/TaskDialog";
@@ -169,6 +169,10 @@ const Dashboard = () => {
             <Button variant="outline" size="sm" onClick={() => navigate("/calendar")} className="transition-all duration-200 hover:scale-105 hover:shadow-md">
               <Calendar className="h-4 w-4 mr-2" />
               Calendar
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="transition-all duration-200 hover:scale-105 hover:shadow-md">
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Insights
             </Button>
             <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="transition-all duration-200 hover:scale-105 hover:shadow-md">
               Settings
