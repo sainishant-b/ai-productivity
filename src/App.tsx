@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import TaskWorkspace from "./pages/TaskWorkspace";
 import CalendarView from "./pages/CalendarView";
+import Insights from "./pages/Insights";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/calendar" element={<CalendarView />} />
+          <Route path="/insights" element={<Insights />} />
           <Route path="/task/:taskId" element={<TaskWorkspace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
