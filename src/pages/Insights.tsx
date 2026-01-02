@@ -97,10 +97,8 @@ const Insights = () => {
 
   const getHeatmapColor = (count: number) => {
     if (count === 0) return "bg-muted/30";
-    if (count === 1) return "bg-success/30";
-    if (count === 2) return "bg-success/50";
-    if (count === 3) return "bg-success/70";
-    return "bg-success";
+    if (count >= 1) return "bg-white dark:bg-white";
+    return "bg-white dark:bg-white";
   };
 
   // Group completion data by weeks for the heatmap
@@ -331,13 +329,10 @@ const Insights = () => {
                 
                 {/* Legend */}
                 <div className="flex items-center justify-end gap-2 mt-4 text-xs text-muted-foreground">
-                  <span>Less</span>
+                  <span>No tasks</span>
                   <div className="w-[12px] h-[12px] rounded-sm bg-muted/30" />
-                  <div className="w-[12px] h-[12px] rounded-sm bg-success/30" />
-                  <div className="w-[12px] h-[12px] rounded-sm bg-success/50" />
-                  <div className="w-[12px] h-[12px] rounded-sm bg-success/70" />
-                  <div className="w-[12px] h-[12px] rounded-sm bg-success" />
-                  <span>More</span>
+                  <div className="w-[12px] h-[12px] rounded-sm bg-white dark:bg-white" />
+                  <span>Completed</span>
                 </div>
               </div>
             </div>
