@@ -152,13 +152,27 @@ const Dashboard = () => {
     }]);
 
     if (!error && profile) {
-      const today = new Date().toDateString();
-      const lastCheckIn = profile.last_check_in_date ? new Date(profile.last_check_in_date).toDateString() : null;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       
-      if (lastCheckIn !== today) {
+      const lastCheckIn = profile.last_check_in_date ? new Date(profile.last_check_in_date) : null;
+      if (lastCheckIn) lastCheckIn.setHours(0, 0, 0, 0);
+      
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      
+      // Only update if we haven't checked in today
+      if (!lastCheckIn || lastCheckIn.getTime() !== today.getTime()) {
+        let newStreak = 1;
+        
+        // If last check-in was yesterday, continue the streak
+        if (lastCheckIn && lastCheckIn.getTime() === yesterday.getTime()) {
+          newStreak = profile.current_streak + 1;
+        }
+        
         await supabase.from("profiles").update({
-          current_streak: profile.current_streak + 1,
-          longest_streak: Math.max(profile.longest_streak, profile.current_streak + 1),
+          current_streak: newStreak,
+          longest_streak: Math.max(profile.longest_streak, newStreak),
           last_check_in_date: new Date().toISOString(),
         }).eq("id", user.id);
         
@@ -212,7 +226,7 @@ const Dashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold transition-transform duration-200 group-hover:scale-105">{profile?.current_streak || 0} days</p>
+              <p className="text-3xl font-bold transition-transform duration-200 group-hover:scale-105">{profile?.current_streak || 0} {(profile?.current_streak || 0) === 1 ? 'day' : 'days'}</p>
             </CardContent>
           </Card>
 
