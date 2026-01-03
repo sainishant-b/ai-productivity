@@ -541,13 +541,13 @@ const TaskWorkspace = () => {
               />
             </div>
             <div className="flex flex-wrap gap-2">
-              {[0, 25, 50, 75, 100].map((value) => (
+              {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((value) => (
                 <Button
                   key={value}
                   onClick={() => updateProgress(value)}
                   variant={task.progress === value ? "default" : "outline"}
                   size="sm"
-                  className="flex-1 min-w-[60px]"
+                  className="min-w-[48px]"
                 >
                   {value}%
                 </Button>
