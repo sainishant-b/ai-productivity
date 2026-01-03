@@ -90,7 +90,7 @@ const Settings = () => {
             <h1 className="font-heading text-4xl font-bold">Settings</h1>
             <p className="text-muted-foreground mt-2">Customize your experience</p>
           </div>
-          <Button onClick={() => navigate("/dashboard")} variant="outline">
+          <Button onClick={() => navigate("/")} variant="outline">
             Back to Dashboard
           </Button>
         </div>
