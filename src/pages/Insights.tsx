@@ -280,8 +280,8 @@ const Insights = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <div className="min-w-[800px] w-max">
+          <div className="overflow-x-auto">
+              <div className="w-full">
                 {/* Month labels */}
                 <div className="flex mb-2 text-xs text-muted-foreground relative h-4">
                   <div className="w-10" />
