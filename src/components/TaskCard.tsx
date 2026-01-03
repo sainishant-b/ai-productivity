@@ -49,7 +49,7 @@ const TaskCard = ({ task, onToggleComplete, onClick }: TaskCardProps) => {
           onClick={(e) => e.stopPropagation()}
           className={`mt-1 transition-transform duration-200 group-hover:scale-110 ${
             inverted 
-              ? "border-white data-[state=checked]:bg-white data-[state=checked]:text-primary" 
+              ? "border-primary-foreground data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary" 
               : "border-primary data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground"
           }`}
         />
@@ -58,13 +58,15 @@ const TaskCard = ({ task, onToggleComplete, onClick }: TaskCardProps) => {
             <h3
               className={`font-heading font-semibold text-lg transition-colors duration-200 ${
                 task.status === "completed" ? "line-through opacity-80" : ""
-              } ${inverted ? "text-white" : "text-foreground group-hover:text-primary"}`}
+              } ${inverted ? "text-primary-foreground" : "text-foreground group-hover:text-primary"}`}
             >
               {task.title}
             </h3>
             <Badge 
-              className={`${priorityColors[task.priority]} transition-transform duration-200 group-hover:scale-105 shrink-0 ${
-                inverted ? "opacity-90" : ""
+              className={`transition-transform duration-200 group-hover:scale-105 shrink-0 ${
+                inverted 
+                  ? "bg-primary-foreground/20 text-primary-foreground border border-primary-foreground/30" 
+                  : priorityColors[task.priority]
               }`}
             >
               {task.priority}
@@ -72,18 +74,18 @@ const TaskCard = ({ task, onToggleComplete, onClick }: TaskCardProps) => {
           </div>
 
           {task.description && (
-            <p className={`text-sm line-clamp-2 ${inverted ? "text-white/80" : "text-muted-foreground"}`}>
+            <p className={`text-sm line-clamp-2 ${inverted ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
               {task.description}
             </p>
           )}
 
-          <div className={`flex flex-wrap items-center gap-3 text-sm ${inverted ? "text-white/80" : "text-muted-foreground"}`}>
+          <div className={`flex flex-wrap items-center gap-3 text-sm ${inverted ? "text-primary-foreground/80" : "text-muted-foreground"}`}>
             {task.due_date && (
               <div className={`flex items-center gap-1 ${isOverdue ? "font-medium" : ""}`}>
                 <Calendar className={`h-4 w-4 ${isOverdue && !inverted ? "text-destructive" : ""}`} />
                 <span>{format(new Date(task.due_date), "MMM d, h:mm a")}</span>
                 {isOverdue && (
-                  <span className={`ml-1 font-semibold ${inverted ? "text-white" : "text-destructive"}`}>
+                  <span className={`ml-1 font-semibold ${inverted ? "text-primary-foreground" : "text-destructive"}`}>
                     OVERDUE
                   </span>
                 )}
@@ -99,7 +101,7 @@ const TaskCard = ({ task, onToggleComplete, onClick }: TaskCardProps) => {
               variant="outline"
               className={`capitalize ${
                 inverted 
-                  ? "border-white/50 text-white bg-white/10" 
+                  ? "border-primary-foreground/50 text-primary-foreground bg-primary-foreground/10" 
                   : "border-border text-foreground"
               }`}
             >
@@ -108,7 +110,7 @@ const TaskCard = ({ task, onToggleComplete, onClick }: TaskCardProps) => {
           </div>
 
           {showProgressFill && task.status !== "completed" && (
-            <div className={`text-xs font-medium ${inverted ? "text-white" : "text-foreground"}`}>
+            <div className={`text-xs font-medium ${inverted ? "text-primary-foreground" : "text-foreground"}`}>
               {progress}% complete
             </div>
           )}
@@ -117,7 +119,7 @@ const TaskCard = ({ task, onToggleComplete, onClick }: TaskCardProps) => {
             variant="secondary"
             className={`text-xs ${
               inverted 
-                ? "bg-white/20 text-white border-white/30" 
+                ? "bg-primary-foreground/20 text-primary-foreground border border-primary-foreground/30" 
                 : "bg-secondary text-secondary-foreground"
             }`}
           >
