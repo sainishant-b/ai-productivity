@@ -190,16 +190,28 @@ const TaskDialog = ({ open, onClose, onSave, task }: TaskDialogProps) => {
 
           {task && (
             <div className="space-y-2">
-              <Label htmlFor="progress">Progress: {formData.progress}%</Label>
-              <input
-                id="progress"
-                type="range"
-                min="0"
-                max="100"
-                value={formData.progress}
-                onChange={(e) => setFormData({ ...formData, progress: parseInt(e.target.value) })}
-                className="w-full"
-              />
+              <Label htmlFor="progress">Progress</Label>
+              <Select
+                value={formData.progress?.toString() || "0"}
+                onValueChange={(value) => setFormData({ ...formData, progress: parseInt(value) })}
+              >
+                <SelectTrigger id="progress">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">0%</SelectItem>
+                  <SelectItem value="10">10%</SelectItem>
+                  <SelectItem value="20">20%</SelectItem>
+                  <SelectItem value="30">30%</SelectItem>
+                  <SelectItem value="40">40%</SelectItem>
+                  <SelectItem value="50">50%</SelectItem>
+                  <SelectItem value="60">60%</SelectItem>
+                  <SelectItem value="70">70%</SelectItem>
+                  <SelectItem value="80">80%</SelectItem>
+                  <SelectItem value="90">90%</SelectItem>
+                  <SelectItem value="100">100%</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           )}
 
