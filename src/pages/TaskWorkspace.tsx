@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
@@ -525,13 +526,19 @@ const TaskWorkspace = () => {
               Progress Tracker
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span>Task Progress</span>
-                <span className="font-bold">{task.progress}%</span>
+                <span className="font-bold text-lg">{task.progress}%</span>
               </div>
-              <Progress value={task.progress} className="h-3" />
+              <Slider
+                value={[task.progress]}
+                onValueChange={(value) => updateProgress(value[0])}
+                max={100}
+                step={1}
+                className="py-2"
+              />
             </div>
             <div className="flex flex-wrap gap-2">
               {[0, 25, 50, 75, 100].map((value) => (
@@ -540,6 +547,7 @@ const TaskWorkspace = () => {
                   onClick={() => updateProgress(value)}
                   variant={task.progress === value ? "default" : "outline"}
                   size="sm"
+                  className="flex-1 min-w-[60px]"
                 >
                   {value}%
                 </Button>
