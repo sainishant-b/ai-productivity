@@ -35,11 +35,32 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<RecommendationsData | null>(null);
   const [scheduledTasks, setScheduledTasks] = useState<Set<string>>(new Set());
+  const [hasSession, setHasSession] = useState(false);
   const { toast } = useToast();
 
+  // Wait for auth session before fetching
   useEffect(() => {
-    getRecommendations();
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setHasSession(true);
+      }
+    };
+    
+    checkSession();
+    
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setHasSession(!!session);
+    });
+    
+    return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (hasSession) {
+      getRecommendations();
+    }
+  }, [hasSession]);
 
   const getRecommendations = async () => {
     setIsLoading(true);
