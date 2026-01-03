@@ -90,37 +90,43 @@ export const useNotifications = (): UseNotificationsReturn => {
     }
   }, [isSupported]);
 
-  const sendNotification = useCallback((options: NotificationOptions) => {
+  const sendNotification = useCallback(async (options: NotificationOptions) => {
     if (!isSupported || permission !== "granted") {
       console.log("Notifications not available or not permitted");
+      toast.error("Notifications are not enabled");
       return;
     }
 
-    const notificationOptions: NotificationOptions = {
-      ...options,
-      icon: options.icon || "/favicon.ico",
-    };
-
-    // Use service worker to show notification if available
-    if (swRegistration) {
-      swRegistration.showNotification(options.title, {
+    try {
+      // Always get the current service worker registration
+      const registration = await navigator.serviceWorker.ready;
+      
+      await registration.showNotification(options.title, {
         body: options.body,
         tag: options.tag || `notification-${Date.now()}`,
-        icon: notificationOptions.icon,
+        icon: options.icon || "/favicon.ico",
         data: options.data,
-        actions: options.actions,
         requireInteraction: options.requireInteraction,
         silent: options.silent,
-      } as NotificationOptions);
-    } else {
-      // Fallback to regular notification
-      new Notification(options.title, {
-        body: options.body,
-        tag: options.tag || `notification-${Date.now()}`,
-        icon: notificationOptions.icon,
       });
+      
+      toast.success("Notification sent!");
+    } catch (error) {
+      console.error("Failed to send notification:", error);
+      // Fallback to regular notification
+      try {
+        new Notification(options.title, {
+          body: options.body,
+          tag: options.tag || `notification-${Date.now()}`,
+          icon: options.icon || "/favicon.ico",
+        });
+        toast.success("Notification sent!");
+      } catch (fallbackError) {
+        console.error("Fallback notification also failed:", fallbackError);
+        toast.error("Failed to send notification");
+      }
     }
-  }, [isSupported, permission, swRegistration]);
+  }, [isSupported, permission]);
 
   const scheduleNotification = useCallback((options: NotificationOptions, delayMs: number): number => {
     const timeoutId = window.setTimeout(() => {
