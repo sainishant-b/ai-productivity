@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -16,6 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Minus, Plus } from "lucide-react";
 
 interface Task {
   id?: string;
@@ -189,29 +191,52 @@ const TaskDialog = ({ open, onClose, onSave, task }: TaskDialogProps) => {
           </div>
 
           {task && (
-            <div className="space-y-2">
-              <Label htmlFor="progress">Progress</Label>
-              <Select
-                value={formData.progress?.toString() || "0"}
-                onValueChange={(value) => setFormData({ ...formData, progress: parseInt(value) })}
-              >
-                <SelectTrigger id="progress">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="0">0%</SelectItem>
-                  <SelectItem value="10">10%</SelectItem>
-                  <SelectItem value="20">20%</SelectItem>
-                  <SelectItem value="30">30%</SelectItem>
-                  <SelectItem value="40">40%</SelectItem>
-                  <SelectItem value="50">50%</SelectItem>
-                  <SelectItem value="60">60%</SelectItem>
-                  <SelectItem value="70">70%</SelectItem>
-                  <SelectItem value="80">80%</SelectItem>
-                  <SelectItem value="90">90%</SelectItem>
-                  <SelectItem value="100">100%</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="progress">Progress</Label>
+                <span className="text-sm font-medium">{formData.progress}%</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => setFormData({ 
+                    ...formData, 
+                    progress: Math.max(0, (formData.progress || 0) - 10) 
+                  })}
+                  disabled={(formData.progress || 0) <= 0}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <Slider
+                  id="progress"
+                  value={[formData.progress || 0]}
+                  onValueChange={(value) => setFormData({ ...formData, progress: value[0] })}
+                  max={100}
+                  step={1}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => setFormData({ 
+                    ...formData, 
+                    progress: Math.min(100, (formData.progress || 0) + 10) 
+                  })}
+                  disabled={(formData.progress || 0) >= 100}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
+              </div>
             </div>
           )}
 
