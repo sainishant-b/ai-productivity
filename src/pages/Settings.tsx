@@ -3,9 +3,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Clock, Moon, Sun, User, Bell, BellOff, Check } from "lucide-react";
+import { Clock, Moon, Sun, User, Bell, BellOff, Check, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
 
@@ -13,8 +15,10 @@ const Settings = () => {
   const navigate = useNavigate();
   const [workHoursStart, setWorkHoursStart] = useState("09:00");
   const [workHoursEnd, setWorkHoursEnd] = useState("17:00");
+  const [checkInFrequency, setCheckInFrequency] = useState(3);
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   
   const { permission, isSupported, requestPermission, sendNotification } = useNotifications();
 
@@ -23,6 +27,12 @@ const Settings = () => {
     const savedTheme = localStorage.getItem("theme") as "light" | "dark" || "dark";
     setTheme(savedTheme);
     document.documentElement.classList.toggle("dark", savedTheme === "dark");
+    
+    // Load notification preference from localStorage
+    const savedNotifPref = localStorage.getItem("notificationsEnabled");
+    if (savedNotifPref !== null) {
+      setNotificationsEnabled(savedNotifPref === "true");
+    }
   }, []);
 
   const loadSettings = async () => {
@@ -31,13 +41,14 @@ const Settings = () => {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("work_hours_start, work_hours_end")
+      .select("work_hours_start, work_hours_end, check_in_frequency")
       .eq("id", user.id)
       .single();
 
     if (profile) {
       setWorkHoursStart(profile.work_hours_start || "09:00");
       setWorkHoursEnd(profile.work_hours_end || "17:00");
+      setCheckInFrequency(profile.check_in_frequency || 3);
     }
   };
 
@@ -51,6 +62,7 @@ const Settings = () => {
       .update({
         work_hours_start: workHoursStart,
         work_hours_end: workHoursEnd,
+        check_in_frequency: checkInFrequency,
       })
       .eq("id", user.id);
 
@@ -69,7 +81,21 @@ const Settings = () => {
     document.documentElement.classList.toggle("dark", newTheme === "dark");
   };
 
+  const toggleNotifications = (enabled: boolean) => {
+    setNotificationsEnabled(enabled);
+    localStorage.setItem("notificationsEnabled", enabled.toString());
+    if (enabled) {
+      toast.success("Notifications enabled");
+    } else {
+      toast.info("Notifications disabled");
+    }
+  };
+
   const handleTestNotification = () => {
+    if (!notificationsEnabled) {
+      toast.error("Notifications are disabled. Enable them first.");
+      return;
+    }
     sendNotification({
       title: "Test Notification 🔔",
       body: "Notifications are working! You'll receive check-in reminders and task alerts.",
@@ -81,6 +107,15 @@ const Settings = () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
+
+  const frequencyOptions = [
+    { value: 1, label: "Every hour" },
+    { value: 2, label: "Every 2 hours" },
+    { value: 3, label: "Every 3 hours" },
+    { value: 4, label: "Every 4 hours" },
+    { value: 6, label: "Every 6 hours" },
+    { value: 8, label: "Once per day" },
+  ];
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -126,9 +161,41 @@ const Settings = () => {
                 />
               </div>
             </div>
-            <Button onClick={handleSave} disabled={loading} className="w-full md:w-auto">
-              Save Work Hours
-            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading flex items-center gap-2">
+              <RefreshCw className="h-5 w-5" />
+              Check-in Frequency
+            </CardTitle>
+            <CardDescription>
+              How often would you like to be prompted for check-ins during work hours?
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="frequency">Check-in Interval</Label>
+              <Select
+                value={checkInFrequency.toString()}
+                onValueChange={(value) => setCheckInFrequency(parseInt(value))}
+              >
+                <SelectTrigger id="frequency" className="w-full md:w-[280px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {frequencyOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value.toString()}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                You'll be prompted for check-ins {frequencyOptions.find(o => o.value === checkInFrequency)?.label.toLowerCase() || "every few hours"} during your work hours.
+              </p>
+            </div>
           </CardContent>
         </Card>
 
@@ -169,22 +236,36 @@ const Settings = () => {
             <CardContent className="space-y-4">
               {permission === "granted" ? (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2 text-success">
-                    <Check className="h-4 w-4" />
-                    <span className="text-sm font-medium">Notifications are enabled</span>
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="notifications-toggle" className="text-base">Enable Notifications</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Receive push notifications for check-ins and tasks
+                      </p>
+                    </div>
+                    <Switch
+                      id="notifications-toggle"
+                      checked={notificationsEnabled}
+                      onCheckedChange={toggleNotifications}
+                    />
                   </div>
-                  <div className="text-sm text-muted-foreground space-y-1">
-                    <p>You'll receive notifications for:</p>
-                    <ul className="list-disc list-inside ml-2 space-y-1">
-                      <li>Check-in reminders during work hours</li>
-                      <li>Tasks due today</li>
-                      <li>Overdue task alerts</li>
-                      <li>Upcoming task reminders</li>
-                    </ul>
-                  </div>
-                  <Button onClick={handleTestNotification} variant="outline" className="w-full md:w-auto">
-                    Send Test Notification
-                  </Button>
+                  
+                  {notificationsEnabled && (
+                    <>
+                      <div className="text-sm text-muted-foreground space-y-1 border-t pt-4">
+                        <p>You'll receive notifications for:</p>
+                        <ul className="list-disc list-inside ml-2 space-y-1">
+                          <li>Check-in reminders during work hours</li>
+                          <li>Tasks due today</li>
+                          <li>Overdue task alerts</li>
+                          <li>Upcoming task reminders</li>
+                        </ul>
+                      </div>
+                      <Button onClick={handleTestNotification} variant="outline" className="w-full md:w-auto">
+                        Send Test Notification
+                      </Button>
+                    </>
+                  )}
                 </div>
               ) : permission === "denied" ? (
                 <div className="space-y-2">
@@ -206,6 +287,12 @@ const Settings = () => {
             </CardContent>
           </Card>
         )}
+
+        <div className="flex justify-end">
+          <Button onClick={handleSave} disabled={loading} size="lg">
+            {loading ? "Saving..." : "Save All Settings"}
+          </Button>
+        </div>
 
         <Card>
           <CardHeader>
