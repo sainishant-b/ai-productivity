@@ -299,9 +299,9 @@ const Insights = () => {
                 </div>
 
                 {/* Heatmap grid */}
-                <div className="flex gap-[3px]">
+                <div className="flex justify-between">
                   {/* Day labels */}
-                  <div className="flex flex-col gap-[3px] text-xs text-muted-foreground pr-2 w-8">
+                  <div className="flex flex-col gap-[3px] text-xs text-muted-foreground pr-2 w-8 shrink-0">
                     <div className="h-[12px]" />
                     <div className="h-[12px] flex items-center">Mon</div>
                     <div className="h-[12px]" />
