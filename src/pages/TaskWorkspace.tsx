@@ -536,7 +536,7 @@ const TaskWorkspace = () => {
                 value={[task.progress]}
                 onValueChange={(value) => updateProgress(value[0])}
                 max={100}
-                step={1}
+                step={10}
                 className="py-2"
               />
             </div>
