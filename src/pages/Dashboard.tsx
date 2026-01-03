@@ -271,7 +271,7 @@ const Dashboard = () => {
           <NotificationPrompt onDismiss={() => setShowNotificationPrompt(false)} />
         )}
 
-        <AIRecommendations onTaskUpdate={fetchTasks} />
+        {user && <AIRecommendations onTaskUpdate={fetchTasks} />}
 
         <div className="flex items-center justify-between">
           <h2 className="font-heading text-2xl font-bold">Your Tasks</h2>

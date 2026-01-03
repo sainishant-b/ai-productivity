@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +33,7 @@ interface AIRecommendationsProps {
 }
 
 export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsProps) {
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<RecommendationsData | null>(null);
   const [scheduledTasks, setScheduledTasks] = useState<Set<string>>(new Set());
@@ -41,18 +43,16 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
   // Wait for auth session before fetching
   useEffect(() => {
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setHasSession(true);
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      setHasSession(!!user);
     };
-    
+
     checkSession();
-    
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setHasSession(!!session);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setHasSession(!!session?.user);
     });
-    
+
     return () => subscription.unsubscribe();
   }, []);
 
@@ -69,7 +69,20 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
         body: {},
       });
 
-      if (error) throw error;
+      if (error) {
+        const status = (error as any)?.context?.status;
+        if (status === 401) {
+          toast({
+            title: 'Session expired',
+            description: 'Please sign in again to get recommendations.',
+            variant: 'destructive',
+          });
+          await supabase.auth.signOut();
+          navigate('/auth');
+          return;
+        }
+        throw error;
+      }
 
       setRecommendations(data);
     } catch (error: any) {
@@ -83,6 +96,7 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
       setIsLoading(false);
     }
   };
+
 
   const scheduleTask = async (task: RecommendedTask) => {
     try {

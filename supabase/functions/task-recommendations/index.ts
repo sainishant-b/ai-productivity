@@ -17,24 +17,47 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
+    const authHeader =
+      req.headers.get('authorization') ?? req.headers.get('Authorization') ?? '';
+
+    if (!authHeader || !authHeader.toLowerCase().startsWith('bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
       {
         global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
+          headers: { Authorization: authHeader },
         },
       }
     );
 
-    // Get user from auth
+    // Get user from auth (pass JWT explicitly to avoid relying on client session state)
+    const jwt = authHeader.replace(/Bearer\s+/i, '').trim();
     const {
       data: { user },
-    } = await supabaseClient.auth.getUser();
+      error: userError,
+    } = await supabaseClient.auth.getUser(jwt);
 
-    if (!user) {
-      throw new Error('No user found');
+    if (userError || !user) {
+      console.error('Auth error:', userError);
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
+
 
     console.log('Fetching tasks and data for user:', user.id);
 
