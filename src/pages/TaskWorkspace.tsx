@@ -28,6 +28,7 @@ import {
   FileText
 } from "lucide-react";
 import CheckInModal from "@/components/CheckInModal";
+import SubtaskList from "@/components/SubtaskList";
 import { format } from "date-fns";
 
 interface Task {
@@ -516,6 +517,16 @@ const TaskWorkspace = () => {
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Subtasks Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading">Subtasks</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SubtaskList taskId={task.id} />
           </CardContent>
         </Card>
 
