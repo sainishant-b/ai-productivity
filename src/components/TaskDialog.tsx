@@ -17,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 
 interface Task {
   id?: string;
@@ -181,13 +181,28 @@ const TaskDialog = ({ open, onClose, onSave, task }: TaskDialogProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="due_date">Due Date & Time</Label>
-            <Input
-              id="due_date"
-              type="datetime-local"
-              value={formData.due_date || ""}
-              onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
-            />
+            <Label htmlFor="due_date">Due Date & Time (Optional)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="due_date"
+                type="datetime-local"
+                value={formData.due_date || ""}
+                onChange={(e) => setFormData({ ...formData, due_date: e.target.value })}
+                className="flex-1"
+              />
+              {formData.due_date && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setFormData({ ...formData, due_date: undefined })}
+                  title="Clear date"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <p className="text-xs text-muted-foreground">Leave empty for tasks without a deadline</p>
           </div>
 
           {task && (
