@@ -192,24 +192,29 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="font-heading text-2xl font-bold">AI Productivity Companion</h1>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)} className="transition-all duration-200 hover:scale-105 hover:shadow-md">
-              Check-in Now
+        <div className="container mx-auto px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-0">
+            <h1 className="font-heading text-lg sm:text-2xl font-bold">AI Productivity</h1>
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="transition-all duration-200 hover:scale-110 sm:hidden">
+              <LogOut className="h-5 w-5" />
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")} className="transition-all duration-200 hover:scale-105 hover:shadow-md">
-              <Calendar className="h-4 w-4 mr-2" />
+          </div>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4 sm:mt-3 lg:mt-0 lg:absolute lg:right-4 lg:top-1/2 lg:-translate-y-1/2">
+            <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)} className="text-xs sm:text-sm px-2 sm:px-3 transition-all duration-200 hover:scale-105 hover:shadow-md">
+              Check-in
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")} className="text-xs sm:text-sm px-2 sm:px-3 transition-all duration-200 hover:scale-105 hover:shadow-md">
+              <Calendar className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Calendar
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="transition-all duration-200 hover:scale-105 hover:shadow-md">
-              <BarChart3 className="h-4 w-4 mr-2" />
+            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="text-xs sm:text-sm px-2 sm:px-3 transition-all duration-200 hover:scale-105 hover:shadow-md">
+              <BarChart3 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
               Insights
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="transition-all duration-200 hover:scale-105 hover:shadow-md">
+            <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="text-xs sm:text-sm px-2 sm:px-3 transition-all duration-200 hover:scale-105 hover:shadow-md">
               Settings
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleSignOut} className="transition-all duration-200 hover:scale-110">
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="transition-all duration-200 hover:scale-110 hidden sm:flex">
               <LogOut className="h-5 w-5" />
             </Button>
           </div>
