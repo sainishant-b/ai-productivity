@@ -733,7 +733,7 @@ const TaskWorkspace = () => {
           <CardContent>
             {(() => {
               const filteredHistory = taskHistory.filter((h) =>
-                ["progress", "description", "work_session"].includes(h.field_changed)
+                ["description", "work_session"].includes(h.field_changed)
               );
               const visibleHistory = filteredHistory.slice(0, historyVisibleCount);
               const hasMore = historyVisibleCount < filteredHistory.length;
@@ -741,7 +741,7 @@ const TaskWorkspace = () => {
               if (filteredHistory.length === 0) {
                 return (
                   <p className="text-center py-8 text-muted-foreground">
-                    No updates yet. Progress, work sessions, and description changes will appear here.
+                    No updates yet. Work sessions and description changes will appear here.
                   </p>
                 );
               }
