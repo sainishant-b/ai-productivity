@@ -776,62 +776,6 @@ const TaskWorkspace = () => {
           </CardContent>
         </Card>
 
-        {/* Check-in Timeline with Mood/Energy History */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-heading flex items-center gap-2">
-                <Heart className="h-5 w-5" />
-                Mood & Energy History
-              </CardTitle>
-              <Button onClick={() => setShowCheckIn(true)} size="sm">
-                Add Check-in
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {checkIns.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No check-ins yet</p>
-                <Button onClick={() => setShowCheckIn(true)} variant="outline" className="mt-4">
-                  Add First Check-in
-                </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {checkIns.map((checkIn) => (
-                  <div key={checkIn.id} className="border-l-4 border-primary/30 pl-4 py-3 bg-accent/30 rounded-r">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">{getMoodEmoji(checkIn.mood)}</span>
-                          <p className="text-xs text-muted-foreground">
-                            {format(new Date(checkIn.created_at), "MMM d, h:mm a")}
-                          </p>
-                        </div>
-                        <p className="text-sm">{checkIn.response}</p>
-                        <div className="flex gap-4 text-xs">
-                          {checkIn.mood && (
-                            <Badge variant="outline" className="capitalize">
-                              {checkIn.mood}
-                            </Badge>
-                          )}
-                          {checkIn.energy_level && (
-                            <Badge variant="outline" className="flex items-center gap-1">
-                              <Zap className="h-3 w-3" />
-                              {checkIn.energy_level}/10
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
         {/* Task Update History */}
         <Card>
           <CardHeader>
