@@ -26,10 +26,13 @@ import {
   Heart,
   History,
   FileText,
-  ChevronDown
+  ChevronDown,
+  Timer
 } from "lucide-react";
 import CheckInModal from "@/components/CheckInModal";
 import SubtaskList from "@/components/SubtaskList";
+import EndSessionModal from "@/components/EndSessionModal";
+import { useWorkSessionTimer } from "@/hooks/useWorkSessionTimer";
 import { format } from "date-fns";
 
 interface Task {
@@ -64,15 +67,33 @@ interface TaskHistory {
   created_at: string;
 }
 
+interface WorkSession {
+  id: string;
+  time_spent: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
 const TaskWorkspace = () => {
   const { taskId } = useParams();
   const navigate = useNavigate();
   const [task, setTask] = useState<Task | null>(null);
   const [checkIns, setCheckIns] = useState<CheckIn[]>([]);
   const [taskHistory, setTaskHistory] = useState<TaskHistory[]>([]);
-  const [isWorking, setIsWorking] = useState(false);
+  const [workSessions, setWorkSessions] = useState<WorkSession[]>([]);
   const [showCheckIn, setShowCheckIn] = useState(false);
-  const [sessionStart, setSessionStart] = useState<Date | null>(null);
+  const [showEndSession, setShowEndSession] = useState(false);
+  
+  // Work session timer hook
+  const {
+    isWorking,
+    sessionStart,
+    elapsedSeconds,
+    startSession,
+    endSession,
+    formatTime,
+    formatTimeReadable,
+  } = useWorkSessionTimer(taskId);
   
   // Edit states
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -82,11 +103,13 @@ const TaskWorkspace = () => {
   const [editedDescription, setEditedDescription] = useState("");
   const [editedNotes, setEditedNotes] = useState("");
   const [historyVisibleCount, setHistoryVisibleCount] = useState(3);
+  const [sessionsVisibleCount, setSessionsVisibleCount] = useState(3);
 
   useEffect(() => {
     loadTask();
     loadCheckIns();
     loadTaskHistory();
+    loadWorkSessions();
   }, [taskId]);
 
   const loadTask = async () => {
@@ -138,6 +161,20 @@ const TaskWorkspace = () => {
     }
   };
 
+  const loadWorkSessions = async () => {
+    if (!taskId) return;
+
+    const { data } = await supabase
+      .from("work_sessions")
+      .select("*")
+      .eq("task_id", taskId)
+      .order("created_at", { ascending: false });
+
+    if (data) {
+      setWorkSessions(data);
+    }
+  };
+
   const logTaskChange = async (field: string, oldValue: any, newValue: any, notes?: string) => {
     if (!taskId) return;
 
@@ -156,29 +193,49 @@ const TaskWorkspace = () => {
     loadTaskHistory();
   };
 
-  const startWorkSession = async () => {
-    setIsWorking(true);
-    setSessionStart(new Date());
+  const handleStartSession = () => {
+    startSession();
     toast.success("Work session started!");
   };
 
-  const endWorkSession = async () => {
+  const handleEndSessionClick = () => {
+    setShowEndSession(true);
+  };
+
+  const handleEndSessionSave = async (notes: string, nextSteps: string) => {
     if (!sessionStart || !taskId) return;
 
-    const duration = Math.floor((new Date().getTime() - sessionStart.getTime()) / 1000 / 60);
+    const durationMinutes = Math.floor(elapsedSeconds / 60);
     
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Save work session with notes
     await supabase.from("work_sessions").insert({
       user_id: user.id,
       task_id: taskId,
-      time_spent: duration,
+      time_spent: durationMinutes,
+      notes: notes || null,
     });
 
-    setIsWorking(false);
-    setSessionStart(null);
-    toast.success(`Work session completed! ${duration} minutes logged.`);
+    // Log to task history with duration and notes
+    const sessionSummary = [
+      `Duration: ${formatTimeReadable(elapsedSeconds)}`,
+      notes ? `Notes: ${notes}` : null,
+      nextSteps ? `Next steps: ${nextSteps}` : null,
+    ].filter(Boolean).join(" | ");
+
+    await logTaskChange(
+      "work_session",
+      null,
+      formatTimeReadable(elapsedSeconds),
+      sessionSummary
+    );
+
+    endSession();
+    setShowEndSession(false);
+    loadWorkSessions();
+    toast.success(`Work session completed! ${formatTimeReadable(elapsedSeconds)} logged.`);
   };
 
   const handleCheckInSubmit = async (response: string, mood?: string, energyLevel?: number) => {
@@ -640,20 +697,23 @@ const TaskWorkspace = () => {
           </CardHeader>
           <CardContent className="space-y-4">
             {!isWorking ? (
-              <Button onClick={startWorkSession} className="w-full" size="lg">
+              <Button onClick={handleStartSession} className="w-full" size="lg">
                 <PlayCircle className="h-5 w-5 mr-2" />
                 Start Work Session
               </Button>
             ) : (
               <div className="space-y-4">
-                <div className="text-center">
+                <div className="text-center bg-accent/30 rounded-lg py-6">
                   <p className="text-sm text-muted-foreground">Session in progress</p>
-                  <p className="text-2xl font-heading font-bold mt-2">
-                    {sessionStart && Math.floor((new Date().getTime() - sessionStart.getTime()) / 1000 / 60)} min
+                  <p className="text-4xl font-heading font-bold mt-2 font-mono tracking-wider">
+                    {formatTime(elapsedSeconds)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {formatTimeReadable(elapsedSeconds)}
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  <Button onClick={endWorkSession} className="flex-1" variant="outline">
+                  <Button onClick={handleEndSessionClick} className="flex-1" variant="outline">
                     <StopCircle className="h-5 w-5 mr-2" />
                     End Session
                   </Button>
@@ -661,6 +721,56 @@ const TaskWorkspace = () => {
                     Quick Check-in
                   </Button>
                 </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Work Sessions History */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="font-heading flex items-center gap-2">
+              <Timer className="h-5 w-5" />
+              Work Session History
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {workSessions.length === 0 ? (
+              <p className="text-center py-6 text-muted-foreground">
+                No work sessions yet. Start a session to track your time.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {workSessions.slice(0, sessionsVisibleCount).map((session) => (
+                  <div key={session.id} className="border-l-4 border-primary/30 pl-4 py-3 bg-accent/20 rounded-r">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="secondary" className="text-xs">
+                            {session.time_spent ? `${session.time_spent} min` : "< 1 min"}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(session.created_at), "MMM d, h:mm a")}
+                          </span>
+                        </div>
+                        {session.notes && (
+                          <p className="text-sm text-muted-foreground mt-2">{session.notes}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {sessionsVisibleCount < workSessions.length && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSessionsVisibleCount((prev) => prev + 5)}
+                    className="w-full text-muted-foreground hover:text-foreground"
+                  >
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    Show more ({workSessions.length - sessionsVisibleCount} remaining)
+                  </Button>
+                )}
               </div>
             )}
           </CardContent>
@@ -814,6 +924,13 @@ const filteredHistory = taskHistory.filter((h) =>
         onClose={() => setShowCheckIn(false)}
         question="How's your progress on this task?"
         onSubmit={handleCheckInSubmit}
+      />
+
+      <EndSessionModal
+        open={showEndSession}
+        onClose={() => setShowEndSession(false)}
+        durationSeconds={elapsedSeconds}
+        onSave={handleEndSessionSave}
       />
     </div>
   );
