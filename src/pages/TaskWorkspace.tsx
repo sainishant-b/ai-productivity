@@ -732,8 +732,8 @@ const TaskWorkspace = () => {
           </CardHeader>
           <CardContent>
             {(() => {
-              const filteredHistory = taskHistory.filter((h) =>
-                ["description", "work_session"].includes(h.field_changed)
+const filteredHistory = taskHistory.filter((h) =>
+                ["description", "work_session", "notes"].includes(h.field_changed)
               );
               const visibleHistory = filteredHistory.slice(0, historyVisibleCount);
               const hasMore = historyVisibleCount < filteredHistory.length;
