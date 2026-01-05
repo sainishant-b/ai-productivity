@@ -3,7 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Clock, CheckCircle2, XCircle, Loader2, Calendar, RefreshCw } from 'lucide-react';
+import { 
+  Sparkles, 
+  Clock, 
+  CheckCircle2, 
+  XCircle, 
+  Loader2, 
+  RefreshCw,
+  AlertTriangle,
+  TrendingUp,
+  Lightbulb,
+  Zap,
+  ArrowUpRight,
+  ArrowRight,
+  ArrowUp
+} from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -130,23 +144,48 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
   };
 
   const getPriorityBadge = (priority: string) => {
-    const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive'; label: string }> = {
-      high: { variant: 'destructive', label: 'High' },
-      medium: { variant: 'default', label: 'Medium' },
-      low: { variant: 'secondary', label: 'Low' },
+    const variants: Record<string, { className: string; label: string }> = {
+      high: { className: 'bg-destructive/10 text-destructive border-destructive/20', label: 'High' },
+      medium: { className: 'bg-warning/10 text-warning border-warning/20', label: 'Medium' },
+      low: { className: 'bg-success/10 text-success border-success/20', label: 'Low' },
     };
     const config = variants[priority] || variants.medium;
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant="outline" className={config.className}>{config.label}</Badge>;
+  };
+
+  const getUrgencyIndicator = (priority: string) => {
+    switch (priority) {
+      case 'high': return <ArrowUp className="h-4 w-4 text-destructive" />;
+      case 'medium': return <ArrowUpRight className="h-4 w-4 text-warning" />;
+      default: return <ArrowRight className="h-4 w-4 text-success" />;
+    }
   };
 
   const getWarningIcon = (type: string) => {
     const iconClass = "h-4 w-4";
     switch (type) {
-      case 'overdue': return <XCircle className={iconClass} />;
+      case 'overdue': return <AlertTriangle className={iconClass} />;
       case 'conflict': return <Clock className={iconClass} />;
-      case 'overload': return <Sparkles className={iconClass} />;
-      default: return <Sparkles className={iconClass} />;
+      case 'overload': return <Zap className={iconClass} />;
+      default: return <AlertTriangle className={iconClass} />;
     }
+  };
+
+  const getInsightIcon = (index: number) => {
+    const icons = [Lightbulb, TrendingUp, Zap, Sparkles];
+    const Icon = icons[index % icons.length];
+    const colors = ['text-accent-orange', 'text-accent-green', 'text-accent-blue', 'text-accent-purple'];
+    return <Icon className={`h-4 w-4 ${colors[index % colors.length]}`} />;
+  };
+
+  const getInsightBorderColor = (index: number) => {
+    const colors = [
+      'from-accent-orange to-accent-orange/50',
+      'from-accent-green to-accent-green/50',
+      'from-accent-blue to-accent-blue/50',
+      'from-accent-purple to-accent-purple/50',
+    ];
+    return colors[index % colors.length];
   };
 
   const activeTasks = recommendations?.recommendedTasks.filter(
@@ -155,16 +194,21 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
 
   if (isLoading) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
+      <Card className="rounded-2xl border-0 shadow-[var(--shadow-lg)] overflow-hidden">
+        <CardHeader className="bg-gradient-to-r from-accent-purple/5 to-accent-blue/5">
+          <CardTitle className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-accent-purple/10">
+              <Sparkles className="h-5 w-5 text-accent-purple" />
+            </div>
             AI Scheduling Recommendations
           </CardTitle>
-          <CardDescription>Analyzing your work patterns and tasks...</CardDescription>
+          <CardDescription className="font-light">Analyzing your work patterns and tasks...</CardDescription>
         </CardHeader>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <CardContent className="flex items-center justify-center py-16">
+          <div className="flex flex-col items-center gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-accent-purple" />
+            <p className="text-sm text-muted-foreground font-light">Generating personalized insights...</p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -173,40 +217,45 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
   if (!recommendations) return null;
 
   return (
-    <Card className="shadow-[var(--shadow-lg)] transition-shadow duration-300 hover:shadow-[var(--shadow-xl)]">
-      <CardHeader>
+    <Card className="rounded-2xl border-0 shadow-[var(--shadow-lg)] overflow-hidden animate-fade-in-up">
+      <CardHeader className="bg-gradient-to-r from-accent-purple/5 via-accent-blue/5 to-accent-purple/5 border-b border-border/50">
         <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary animate-pulse" />
-              Daily Top 5 Recommendations
-            </CardTitle>
-            <CardDescription>
-              Smart task matching based on your energy patterns and priorities
-            </CardDescription>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-accent-purple/20 to-accent-blue/20">
+              <Sparkles className="h-5 w-5 text-accent-purple animate-pulse-subtle" />
+            </div>
+            <div>
+              <CardTitle className="text-lg font-semibold tracking-tight">Daily Top 5 Recommendations</CardTitle>
+              <CardDescription className="font-light mt-0.5">
+                Smart task matching based on your energy patterns
+              </CardDescription>
+            </div>
           </div>
           <Button
             onClick={getRecommendations}
             variant="ghost"
             size="sm"
-            className="gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+            className="gap-2 rounded-xl transition-all duration-200 hover:scale-105 hover:bg-accent-purple/10"
           >
             <RefreshCw className="h-4 w-4" />
-            Regenerate
+            Refresh
           </Button>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-6 p-6">
         {/* Warnings */}
         {recommendations.warnings && recommendations.warnings.length > 0 && (
           <div className="space-y-2">
             {recommendations.warnings.map((warning, idx) => (
               <div
                 key={idx}
-                className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 transition-all duration-300 hover:shadow-md hover:bg-destructive/15"
+                className="flex items-start gap-3 p-4 rounded-xl bg-destructive/5 border border-destructive/10 transition-all duration-300 hover:bg-destructive/10 animate-fade-in-up"
+                style={{ animationDelay: `${idx * 50}ms` }}
               >
-                <div className="text-destructive mt-0.5">{getWarningIcon(warning.type)}</div>
-                <p className="text-sm text-foreground flex-1">{warning.message}</p>
+                <div className="p-1.5 rounded-lg bg-destructive/10 text-destructive mt-0.5">
+                  {getWarningIcon(warning.type)}
+                </div>
+                <p className="text-sm text-foreground/90 flex-1 font-light">{warning.message}</p>
               </div>
             ))}
           </div>
@@ -214,58 +263,72 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
 
         {/* Insights */}
         {recommendations.insights && recommendations.insights.length > 0 && (
-          <Card className="shadow-[var(--shadow-md)] transition-all duration-300 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5">
-            <CardHeader>
-              <CardTitle className="text-base">Key Insights</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ul className="space-y-2">
-                {recommendations.insights.map((insight, idx) => (
-                  <li key={idx} className="text-sm text-muted-foreground flex items-start gap-2 transition-transform duration-200 hover:translate-x-1">
-                    <Sparkles className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                    <span>{insight}</span>
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+          <div className="space-y-2.5">
+            <h4 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Lightbulb className="h-4 w-4" />
+              Key Insights
+            </h4>
+            <div className="space-y-2">
+              {recommendations.insights.map((insight, idx) => (
+                <div 
+                  key={idx} 
+                  className="relative flex items-start gap-3 p-4 rounded-xl bg-card border border-border/50 transition-all duration-300 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 overflow-hidden animate-fade-in-up"
+                  style={{ animationDelay: `${idx * 75}ms` }}
+                >
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getInsightBorderColor(idx)}`} />
+                  <div className="pl-2 flex items-start gap-3">
+                    {getInsightIcon(idx)}
+                    <span className="text-sm text-foreground/80 font-light">{insight}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         {/* Task Recommendations */}
         <div className="space-y-4">
-          <h3 className="text-sm font-medium">
+          <h4 className="text-sm font-medium text-muted-foreground">
             {activeTasks.length > 0 
               ? `${activeTasks.length} Recommended Task${activeTasks.length !== 1 ? 's' : ''} for Today`
               : 'All tasks scheduled'}
-          </h3>
+          </h4>
           {activeTasks.map((task, idx) => (
-            <Card key={task.taskId} className="border-l-4 border-l-primary shadow-[var(--shadow-md)] transition-all duration-300 hover:shadow-[var(--shadow-lift)] hover:-translate-y-1 group">
-              <CardHeader>
+            <Card 
+              key={task.taskId} 
+              className="relative overflow-hidden rounded-xl border-0 shadow-[var(--shadow-md)] transition-all duration-300 hover:shadow-[var(--shadow-lg)] hover:-translate-y-1 hover:scale-[1.02] group animate-fade-in-up"
+              style={{ animationDelay: `${idx * 100}ms` }}
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-accent-purple to-accent-blue" />
+              <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold transition-transform duration-200 group-hover:scale-110 group-hover:rotate-3">
+                  <div className="flex-1 pl-2">
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-accent-purple to-accent-blue text-white text-xs font-bold transition-transform duration-200 group-hover:scale-110">
                         {idx + 1}
                       </span>
-                      <CardTitle className="text-base">{task.title}</CardTitle>
+                      <CardTitle className="text-base font-semibold tracking-tight">{task.title}</CardTitle>
                     </div>
-                    <CardDescription className="flex items-center gap-2 mt-2">
-                      <Clock className="h-3 w-3" />
+                    <CardDescription className="flex items-center gap-2 font-light">
+                      <Clock className="h-3.5 w-3.5" />
                       {task.suggestedTime}
+                      <span className="flex items-center gap-1 ml-2">
+                        {getUrgencyIndicator(task.priority)}
+                      </span>
                     </CardDescription>
                   </div>
                   {getPriorityBadge(task.priority)}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="bg-muted/50 p-3 rounded-md transition-colors duration-200 group-hover:bg-muted/70">
-                  <p className="text-sm text-foreground">{task.reasoning}</p>
+              <CardContent className="space-y-4 pl-5">
+                <div className="bg-muted/30 p-3 rounded-lg transition-colors duration-200 group-hover:bg-muted/50">
+                  <p className="text-sm text-foreground/70 font-light leading-relaxed">{task.reasoning}</p>
                 </div>
                 <div className="flex gap-2">
                   <Button
                     onClick={() => scheduleTask(task)}
                     size="sm"
-                    className="gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                    className="gap-2 rounded-xl bg-gradient-to-r from-accent-purple to-accent-blue text-white border-0 shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-[var(--shadow-lg)] hover:opacity-90 hover:-translate-y-0.5"
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     Schedule This
@@ -273,8 +336,8 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
                   <Button
                     onClick={() => dismissTask(task.taskId)}
                     size="sm"
-                    variant="outline"
-                    className="gap-2 transition-all duration-200 hover:scale-105"
+                    variant="ghost"
+                    className="gap-2 rounded-xl transition-all duration-200 hover:bg-muted"
                   >
                     <XCircle className="h-4 w-4" />
                     Skip
@@ -286,9 +349,11 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
         </div>
 
         {activeTasks.length === 0 && (
-          <div className="text-center py-8 text-muted-foreground">
-            <CheckCircle2 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-            <p>All recommendations have been scheduled</p>
+          <div className="text-center py-12">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-green/10 mb-4">
+              <CheckCircle2 className="h-8 w-8 text-accent-green" />
+            </div>
+            <p className="text-muted-foreground font-light">All recommendations have been scheduled</p>
           </div>
         )}
       </CardContent>
