@@ -25,7 +25,8 @@ import {
   Zap,
   Heart,
   History,
-  FileText
+  FileText,
+  ChevronDown
 } from "lucide-react";
 import CheckInModal from "@/components/CheckInModal";
 import SubtaskList from "@/components/SubtaskList";
@@ -80,6 +81,7 @@ const TaskWorkspace = () => {
   const [editedTitle, setEditedTitle] = useState("");
   const [editedDescription, setEditedDescription] = useState("");
   const [editedNotes, setEditedNotes] = useState("");
+  const [historyVisibleCount, setHistoryVisibleCount] = useState(3);
 
   useEffect(() => {
     loadTask();
@@ -729,42 +731,65 @@ const TaskWorkspace = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {taskHistory.length === 0 ? (
-              <p className="text-center py-8 text-muted-foreground">
-                No updates yet. Changes to this task will appear here.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {taskHistory.map((history) => (
-                  <div key={history.id} className="border-l-2 border-muted pl-4 py-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="secondary" className="text-xs capitalize">
-                            {history.field_changed}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(history.created_at), "MMM d, h:mm a")}
-                          </span>
-                        </div>
-                        {history.notes && (
-                          <p className="text-sm text-muted-foreground">{history.notes}</p>
-                        )}
-                        {history.old_value && history.new_value && (
-                          <div className="text-xs mt-1 space-y-1">
-                            <p className="text-muted-foreground">
-                              <span className="line-through">{history.old_value}</span>
-                              {" → "}
-                              <span className="font-medium">{history.new_value}</span>
-                            </p>
+            {(() => {
+              const filteredHistory = taskHistory.filter((h) =>
+                ["progress", "description", "work_session"].includes(h.field_changed)
+              );
+              const visibleHistory = filteredHistory.slice(0, historyVisibleCount);
+              const hasMore = historyVisibleCount < filteredHistory.length;
+
+              if (filteredHistory.length === 0) {
+                return (
+                  <p className="text-center py-8 text-muted-foreground">
+                    No updates yet. Progress, work sessions, and description changes will appear here.
+                  </p>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {visibleHistory.map((history) => (
+                    <div key={history.id} className="border-l-2 border-muted pl-4 py-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="secondary" className="text-xs capitalize">
+                              {history.field_changed === "work_session" ? "Work Session" : history.field_changed}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(history.created_at), "MMM d, h:mm a")}
+                            </span>
                           </div>
-                        )}
+                          {history.notes && (
+                            <p className="text-sm text-muted-foreground">{history.notes}</p>
+                          )}
+                          {history.old_value && history.new_value && (
+                            <div className="text-xs mt-1 space-y-1">
+                              <p className="text-muted-foreground">
+                                <span className="line-through">{history.old_value}</span>
+                                {" → "}
+                                <span className="font-medium">{history.new_value}</span>
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                  {hasMore && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setHistoryVisibleCount((prev) => prev + 5)}
+                      className="w-full text-muted-foreground hover:text-foreground"
+                    >
+                      <ChevronDown className="h-4 w-4 mr-2" />
+                      Show more ({filteredHistory.length - historyVisibleCount} remaining)
+                    </Button>
+                  )}
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
       </div>
