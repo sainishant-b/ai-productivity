@@ -6,9 +6,8 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
@@ -21,13 +20,13 @@ import {
   Save, 
   X,
   TrendingUp,
-  Calendar,
   Zap,
   Heart,
   History,
   FileText,
   ChevronDown,
-  Timer
+  Timer,
+  ChevronUp
 } from "lucide-react";
 import CheckInModal from "@/components/CheckInModal";
 import SubtaskList from "@/components/SubtaskList";
@@ -84,6 +83,17 @@ const TaskWorkspace = () => {
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [showEndSession, setShowEndSession] = useState(false);
   
+  // Collapsible states - all closed by default except title
+  const [descriptionOpen, setDescriptionOpen] = useState(false);
+  const [subtasksOpen, setSubtasksOpen] = useState(false);
+  const [progressOpen, setProgressOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [sessionsOpen, setSessionsOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  
+  // Work session bar expanded state
+  const [sessionBarExpanded, setSessionBarExpanded] = useState(false);
+  
   // Work session timer hook
   const {
     isWorking,
@@ -104,6 +114,12 @@ const TaskWorkspace = () => {
   const [editedNotes, setEditedNotes] = useState("");
   const [historyVisibleCount, setHistoryVisibleCount] = useState(3);
   const [sessionsVisibleCount, setSessionsVisibleCount] = useState(3);
+  
+  // Track if any edits are pending
+  const hasUnsavedChanges = 
+    (isEditingTitle && editedTitle !== task?.title) ||
+    (isEditingDescription && editedDescription !== (task?.description || "")) ||
+    (isEditingNotes && editedNotes !== (task?.notes || ""));
 
   useEffect(() => {
     loadTask();
@@ -195,6 +211,7 @@ const TaskWorkspace = () => {
 
   const handleStartSession = () => {
     startSession();
+    setSessionBarExpanded(true);
     toast.success("Work session started!");
   };
 
@@ -234,6 +251,7 @@ const TaskWorkspace = () => {
 
     endSession();
     setShowEndSession(false);
+    setSessionBarExpanded(false);
     loadWorkSessions();
     toast.success(`Work session completed! ${formatTimeReadable(elapsedSeconds)} logged.`);
   };
@@ -396,472 +414,510 @@ const TaskWorkspace = () => {
   };
 
   const priorityColors = {
-    high: "bg-destructive text-destructive-foreground",
-    medium: "bg-warning text-warning-foreground",
-    low: "bg-success text-success-foreground",
+    high: "bg-destructive/10 text-destructive border-destructive/20",
+    medium: "bg-warning/10 text-warning border-warning/20",
+    low: "bg-success/10 text-success border-success/20",
   };
+
+  const filteredHistory = taskHistory.filter((h) =>
+    ["description", "work_session", "notes"].includes(h.field_changed)
+  );
 
   if (!task) return null;
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-5xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background pb-32">
+      {/* Progress bar at top */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-muted">
+        <div 
+          className="h-full bg-gradient-to-r from-accent-purple to-accent-blue transition-all duration-500 ease-out"
+          style={{ width: `${task.progress}%` }}
+        />
+      </div>
+
+      <div className="max-w-2xl mx-auto px-4 pt-8 space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <Button onClick={() => navigate("/")} variant="ghost" size="sm">
+          <Button onClick={() => navigate("/")} variant="ghost" size="sm" className="rounded-xl -ml-2">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <Button onClick={completeTask} variant="outline" size="sm">
+          <Button onClick={completeTask} variant="outline" size="sm" className="rounded-xl">
             <CheckCircle2 className="h-4 w-4 mr-2" />
-            Mark Complete
+            Complete
           </Button>
         </div>
 
-        {/* Task Title - Editable */}
-        <Card>
-          <CardContent className="pt-6">
-            {!isEditingTitle ? (
-              <div className="flex items-start justify-between gap-4">
-                <h1 className="font-heading text-4xl font-bold flex-1">{task.title}</h1>
+        {/* Task Title - Always visible */}
+        <div className="space-y-4 animate-fade-in-up">
+          {!isEditingTitle ? (
+            <div className="flex items-start justify-between gap-4 group">
+              <h1 className="font-heading text-3xl md:text-4xl font-bold tracking-tight">{task.title}</h1>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsEditingTitle(true)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity rounded-xl shrink-0"
+              >
+                <Edit2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <Input
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="text-2xl font-bold rounded-xl"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <Button onClick={saveTitle} size="sm" className="rounded-xl">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save
+                </Button>
                 <Button
+                  onClick={() => {
+                    setEditedTitle(task.title);
+                    setIsEditingTitle(false);
+                  }}
                   variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditingTitle(true)}
+                  size="sm"
+                  className="rounded-xl"
                 >
-                  <Edit2 className="h-4 w-4" />
+                  <X className="h-4 w-4 mr-2" />
+                  Cancel
                 </Button>
               </div>
-            ) : (
-              <div className="space-y-2">
-                <Input
-                  value={editedTitle}
-                  onChange={(e) => setEditedTitle(e.target.value)}
-                  className="text-2xl font-bold"
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <Button onClick={saveTitle} size="sm">
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setEditedTitle(task.title);
-                      setIsEditingTitle(false);
-                    }}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          )}
 
-        {/* Task Metadata & Indicators */}
-        <div className="grid md:grid-cols-3 gap-4">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Priority</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex gap-2">
-                {["high", "medium", "low"].map((priority) => (
-                  <Button
-                    key={priority}
-                    onClick={() => updatePriority(priority)}
-                    variant={task.priority === priority ? "default" : "outline"}
-                    size="sm"
-                    className={task.priority === priority ? priorityColors[priority as keyof typeof priorityColors] : ""}
-                  >
-                    {priority}
-                  </Button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Heart className="h-4 w-4" />
-                Mood Tracking
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {getMoodStats() ? (
-                <div className="space-y-1">
-                  <p className="text-2xl font-bold">
-                    {getMoodEmoji(checkIns[0]?.mood || null)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {getMoodStats()!.totalCheckIns} check-ins
-                  </p>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No mood data yet</p>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium flex items-center gap-2">
-                <Zap className="h-4 w-4" />
-                Avg Energy
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {getMoodStats()?.avgEnergy ? (
-                <div className="space-y-1">
-                  <p className="text-2xl font-bold">{getMoodStats()!.avgEnergy}/10</p>
-                  <p className="text-xs text-muted-foreground">Average level</p>
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No energy data yet</p>
-              )}
-            </CardContent>
-          </Card>
+          {/* Priority badges */}
+          <div className="flex gap-2">
+            {["high", "medium", "low"].map((priority) => (
+              <Badge
+                key={priority}
+                variant="outline"
+                onClick={() => updatePriority(priority)}
+                className={`cursor-pointer transition-all duration-200 hover:scale-105 capitalize rounded-lg ${
+                  task.priority === priority 
+                    ? priorityColors[priority as keyof typeof priorityColors] 
+                    : "opacity-50 hover:opacity-100"
+                }`}
+              >
+                {priority}
+              </Badge>
+            ))}
+          </div>
         </div>
 
-        {/* Description - Editable */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-heading">Description</CardTitle>
-              {!isEditingDescription && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditingDescription(true)}
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!isEditingDescription ? (
-              <p className="text-muted-foreground whitespace-pre-wrap">
-                {task.description || "No description yet. Click edit to add one."}
-              </p>
-            ) : (
-              <div className="space-y-2">
-                <Textarea
-                  value={editedDescription}
-                  onChange={(e) => setEditedDescription(e.target.value)}
-                  rows={4}
-                  placeholder="Add a detailed description..."
-                  autoFocus
-                />
-                <div className="flex gap-2">
-                  <Button onClick={saveDescription} size="sm">
-                    <Save className="h-4 w-4 mr-2" />
-                    Save
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setEditedDescription(task.description || "");
-                      setIsEditingDescription(false);
-                    }}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        {/* Quick Stats Row */}
+        <div className="grid grid-cols-3 gap-3 animate-fade-in-up stagger-2">
+          <div className="p-4 rounded-2xl bg-card border border-border/50 text-center">
+            <p className="text-xs text-muted-foreground font-light mb-1">Progress</p>
+            <p className="text-2xl font-bold">{task.progress}%</p>
+          </div>
+          <div className="p-4 rounded-2xl bg-card border border-border/50 text-center">
+            <p className="text-xs text-muted-foreground font-light mb-1">Sessions</p>
+            <p className="text-2xl font-bold">{workSessions.length}</p>
+          </div>
+          <div className="p-4 rounded-2xl bg-card border border-border/50 text-center">
+            <p className="text-xs text-muted-foreground font-light mb-1">Check-ins</p>
+            <p className="text-2xl font-bold">{checkIns.length}</p>
+          </div>
+        </div>
 
-        {/* Subtasks Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading">Subtasks</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <SubtaskList taskId={task.id} />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Progress Tracker
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Task Progress</span>
-                <span className="font-bold text-lg">{task.progress}%</span>
-              </div>
-              <Slider
-                value={[task.progress]}
-                onValueChange={(value) => updateProgress(value[0])}
-                max={100}
-                step={10}
-                className="py-2"
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((value) => (
-                <Button
-                  key={value}
-                  onClick={() => updateProgress(value)}
-                  variant={task.progress === value ? "default" : "outline"}
-                  size="sm"
-                  className="min-w-[48px]"
-                >
-                  {value}%
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notes Section - Rich Text */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="font-heading flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Notes
-              </CardTitle>
-              {!isEditingNotes && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsEditingNotes(true)}
-                >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {!isEditingNotes ? (
-              <div className="min-h-[100px]">
-                {task.notes ? (
-                  <p className="whitespace-pre-wrap">{task.notes}</p>
-                ) : (
-                  <p className="text-muted-foreground italic">
-                    No notes yet. Click edit to add your thoughts, ideas, or important details.
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <Textarea
-                  value={editedNotes}
-                  onChange={(e) => setEditedNotes(e.target.value)}
-                  rows={8}
-                  placeholder="Add notes, ideas, links, or any important information about this task..."
-                  autoFocus
-                  className="font-mono text-sm"
-                />
-                <div className="flex gap-2">
-                  <Button onClick={saveNotes} size="sm">
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Notes
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setEditedNotes(task.notes || "");
-                      setIsEditingNotes(false);
-                    }}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <X className="h-4 w-4 mr-2" />
-                    Cancel
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading flex items-center gap-2">
-              <Clock className="h-5 w-5" />
-              Work Session
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {!isWorking ? (
-              <Button onClick={handleStartSession} className="w-full" size="lg">
-                <PlayCircle className="h-5 w-5 mr-2" />
-                Start Work Session
-              </Button>
-            ) : (
-              <div className="space-y-4">
-                <div className="text-center bg-accent/30 rounded-lg py-6">
-                  <p className="text-sm text-muted-foreground">Session in progress</p>
-                  <p className="text-4xl font-heading font-bold mt-2 font-mono tracking-wider">
-                    {formatTime(elapsedSeconds)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatTimeReadable(elapsedSeconds)}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleEndSessionClick} className="flex-1" variant="outline">
-                    <StopCircle className="h-5 w-5 mr-2" />
-                    End Session
-                  </Button>
-                  <Button onClick={() => setShowCheckIn(true)} className="flex-1">
-                    Quick Check-in
-                  </Button>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Work Sessions History */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading flex items-center gap-2">
-              <Timer className="h-5 w-5" />
-              Work Session History
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {workSessions.length === 0 ? (
-              <p className="text-center py-6 text-muted-foreground">
-                No work sessions yet. Start a session to track your time.
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {workSessions.slice(0, sessionsVisibleCount).map((session) => (
-                  <div key={session.id} className="border-l-4 border-primary/30 pl-4 py-3 bg-accent/20 rounded-r">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-3">
-                          <Badge variant="secondary" className="text-xs">
-                            {session.time_spent ? `${session.time_spent} min` : "< 1 min"}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {format(new Date(session.created_at), "MMM d, h:mm a")}
-                          </span>
-                        </div>
-                        {session.notes && (
-                          <p className="text-sm text-muted-foreground mt-2">{session.notes}</p>
-                        )}
+        {/* Collapsible Sections */}
+        <div className="space-y-3">
+          {/* Description */}
+          <Collapsible open={descriptionOpen} onOpenChange={setDescriptionOpen}>
+            <Card className="rounded-2xl border-0 shadow-[var(--shadow-sm)] overflow-hidden transition-all duration-300 hover:shadow-[var(--shadow-md)]">
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      Description
+                    </CardTitle>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${descriptionOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="animate-collapsible-down">
+                <CardContent className="pt-0 pb-4">
+                  {!isEditingDescription ? (
+                    <div 
+                      className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors min-h-[60px]"
+                      onClick={() => setIsEditingDescription(true)}
+                    >
+                      {task.description || "Click to add a description..."}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={editedDescription}
+                        onChange={(e) => setEditedDescription(e.target.value)}
+                        rows={4}
+                        className="rounded-xl"
+                        placeholder="Add a detailed description..."
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <Button onClick={saveDescription} size="sm" className="rounded-xl">
+                          <Save className="h-4 w-4 mr-2" />
+                          Save
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setEditedDescription(task.description || "");
+                            setIsEditingDescription(false);
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-xl"
+                        >
+                          Cancel
+                        </Button>
                       </div>
                     </div>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Subtasks */}
+          <Collapsible open={subtasksOpen} onOpenChange={setSubtasksOpen}>
+            <Card className="rounded-2xl border-0 shadow-[var(--shadow-sm)] overflow-hidden transition-all duration-300 hover:shadow-[var(--shadow-md)]">
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+                      Subtasks
+                    </CardTitle>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${subtasksOpen ? 'rotate-180' : ''}`} />
                   </div>
-                ))}
-                {sessionsVisibleCount < workSessions.length && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSessionsVisibleCount((prev) => prev + 5)}
-                    className="w-full text-muted-foreground hover:text-foreground"
-                  >
-                    <ChevronDown className="h-4 w-4 mr-2" />
-                    Show more ({workSessions.length - sessionsVisibleCount} remaining)
-                  </Button>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="animate-collapsible-down">
+                <CardContent className="pt-0 pb-4">
+                  <SubtaskList taskId={task.id} />
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
 
-        {/* Task Update History */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-heading flex items-center gap-2">
-              <History className="h-5 w-5" />
-              Update History
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {(() => {
-const filteredHistory = taskHistory.filter((h) =>
-                ["description", "work_session", "notes"].includes(h.field_changed)
-              );
-              const visibleHistory = filteredHistory.slice(0, historyVisibleCount);
-              const hasMore = historyVisibleCount < filteredHistory.length;
+          {/* Progress */}
+          <Collapsible open={progressOpen} onOpenChange={setProgressOpen}>
+            <Card className="rounded-2xl border-0 shadow-[var(--shadow-sm)] overflow-hidden transition-all duration-300 hover:shadow-[var(--shadow-md)]">
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                      Progress Tracker
+                      <Badge variant="secondary" className="ml-2 rounded-lg">{task.progress}%</Badge>
+                    </CardTitle>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${progressOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="animate-collapsible-down">
+                <CardContent className="pt-0 pb-4 space-y-4">
+                  <Slider
+                    value={[task.progress]}
+                    onValueChange={(value) => updateProgress(value[0])}
+                    max={100}
+                    step={10}
+                    className="py-2"
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {[0, 25, 50, 75, 100].map((value) => (
+                      <Button
+                        key={value}
+                        onClick={() => updateProgress(value)}
+                        variant={task.progress === value ? "default" : "outline"}
+                        size="sm"
+                        className="rounded-xl min-w-[50px]"
+                      >
+                        {value}%
+                      </Button>
+                    ))}
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
 
-              if (filteredHistory.length === 0) {
-                return (
-                  <p className="text-center py-8 text-muted-foreground">
-                    No updates yet. Work sessions and description changes will appear here.
-                  </p>
-                );
-              }
+          {/* Notes */}
+          <Collapsible open={notesOpen} onOpenChange={setNotesOpen}>
+            <Card className="rounded-2xl border-0 shadow-[var(--shadow-sm)] overflow-hidden transition-all duration-300 hover:shadow-[var(--shadow-md)]">
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      Notes
+                      {task.notes && <span className="text-xs text-muted-foreground ml-1">({task.notes.length} chars)</span>}
+                    </CardTitle>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${notesOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="animate-collapsible-down">
+                <CardContent className="pt-0 pb-4">
+                  {!isEditingNotes ? (
+                    <div 
+                      className="text-sm text-muted-foreground cursor-pointer hover:text-foreground transition-colors min-h-[80px] whitespace-pre-wrap"
+                      onClick={() => setIsEditingNotes(true)}
+                    >
+                      {task.notes || "Click to add notes..."}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <Textarea
+                        value={editedNotes}
+                        onChange={(e) => setEditedNotes(e.target.value)}
+                        rows={6}
+                        className="rounded-xl font-mono text-sm"
+                        placeholder="Add notes, ideas, links..."
+                        autoFocus
+                      />
+                      <div className="flex gap-2">
+                        <Button onClick={saveNotes} size="sm" className="rounded-xl">
+                          <Save className="h-4 w-4 mr-2" />
+                          Save
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setEditedNotes(task.notes || "");
+                            setIsEditingNotes(false);
+                          }}
+                          variant="ghost"
+                          size="sm"
+                          className="rounded-xl"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
 
-              return (
-                <div className="space-y-3">
-                  {visibleHistory.map((history) => (
-                    <div key={history.id} className="border-l-2 border-muted pl-4 py-2">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1">
+          {/* Work Sessions History */}
+          <Collapsible open={sessionsOpen} onOpenChange={setSessionsOpen}>
+            <Card className="rounded-2xl border-0 shadow-[var(--shadow-sm)] overflow-hidden transition-all duration-300 hover:shadow-[var(--shadow-md)]">
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <Timer className="h-4 w-4 text-muted-foreground" />
+                      Work Sessions
+                      <Badge variant="secondary" className="ml-2 rounded-lg">{workSessions.length}</Badge>
+                    </CardTitle>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${sessionsOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="animate-collapsible-down">
+                <CardContent className="pt-0 pb-4">
+                  {workSessions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No sessions yet
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {workSessions.slice(0, sessionsVisibleCount).map((session) => (
+                        <div key={session.id} className="p-3 rounded-xl bg-muted/30 border border-border/30">
+                          <div className="flex items-center justify-between mb-1">
+                            <Badge variant="outline" className="text-xs rounded-lg">
+                              {session.time_spent ? `${session.time_spent} min` : "< 1 min"}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(session.created_at), "MMM d, h:mm a")}
+                            </span>
+                          </div>
+                          {session.notes && (
+                            <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{session.notes}</p>
+                          )}
+                        </div>
+                      ))}
+                      {sessionsVisibleCount < workSessions.length && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSessionsVisibleCount((prev) => prev + 5)}
+                          className="w-full text-muted-foreground rounded-xl"
+                        >
+                          Show more ({workSessions.length - sessionsVisibleCount} remaining)
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Update History */}
+          <Collapsible open={historyOpen} onOpenChange={setHistoryOpen}>
+            <Card className="rounded-2xl border-0 shadow-[var(--shadow-sm)] overflow-hidden transition-all duration-300 hover:shadow-[var(--shadow-md)]">
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-4">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium flex items-center gap-2">
+                      <History className="h-4 w-4 text-muted-foreground" />
+                      Update History
+                      <Badge variant="secondary" className="ml-2 rounded-lg">{filteredHistory.length}</Badge>
+                    </CardTitle>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform duration-300 ${historyOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="animate-collapsible-down">
+                <CardContent className="pt-0 pb-4">
+                  {filteredHistory.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      No updates yet
+                    </p>
+                  ) : (
+                    <div className="space-y-2">
+                      {filteredHistory.slice(0, historyVisibleCount).map((history) => (
+                        <div key={history.id} className="p-3 rounded-xl bg-muted/30 border border-border/30">
                           <div className="flex items-center gap-2 mb-1">
-                            <Badge variant="secondary" className="text-xs capitalize">
-                              {history.field_changed === "work_session" ? "Work Session" : history.field_changed}
+                            <Badge variant="outline" className="text-xs capitalize rounded-lg">
+                              {history.field_changed === "work_session" ? "Session" : history.field_changed}
                             </Badge>
                             <span className="text-xs text-muted-foreground">
                               {format(new Date(history.created_at), "MMM d, h:mm a")}
                             </span>
                           </div>
                           {history.notes && (
-                            <p className="text-sm text-muted-foreground">{history.notes}</p>
-                          )}
-{history.field_changed === "notes" ? (
-                            history.new_value && (
-                              <p className="text-sm mt-1">
-                                <span className="text-muted-foreground">
-                                  {history.old_value ? "Updated: " : "Added: "}
-                                </span>
-                                <span className="font-medium">
-                                  "{history.old_value && history.new_value.startsWith(history.old_value)
-                                    ? history.new_value.slice(history.old_value.length).trim()
-                                    : history.new_value}"
-                                </span>
-                              </p>
-                            )
-                          ) : (
-                            history.old_value && history.new_value && (
-                              <div className="text-xs mt-1 space-y-1">
-                                <p className="text-muted-foreground">
-                                  <span className="line-through">{history.old_value}</span>
-                                  {" → "}
-                                  <span className="font-medium">{history.new_value}</span>
-                                </p>
-                              </div>
-                            )
+                            <p className="text-sm text-muted-foreground line-clamp-2">{history.notes}</p>
                           )}
                         </div>
-                      </div>
+                      ))}
+                      {historyVisibleCount < filteredHistory.length && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setHistoryVisibleCount((prev) => prev + 5)}
+                          className="w-full text-muted-foreground rounded-xl"
+                        >
+                          Show more ({filteredHistory.length - historyVisibleCount} remaining)
+                        </Button>
+                      )}
                     </div>
-                  ))}
-                  {hasMore && (
+                  )}
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        </div>
+      </div>
+
+      {/* Floating Work Session Bar */}
+      <div className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ${sessionBarExpanded || isWorking ? 'translate-y-0' : 'translate-y-0'}`}>
+        <div className="max-w-2xl mx-auto px-4 pb-4">
+          <Card className={`rounded-2xl border-0 shadow-[var(--shadow-xl)] overflow-hidden transition-all duration-300 ${isWorking ? 'bg-gradient-to-r from-accent-purple/10 to-accent-blue/10' : 'bg-card'}`}>
+            {/* Slim bar when not expanded */}
+            {!sessionBarExpanded && !isWorking ? (
+              <div 
+                className="p-4 cursor-pointer hover:bg-muted/30 transition-colors flex items-center justify-between"
+                onClick={() => setSessionBarExpanded(true)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-accent-purple/10">
+                    <Clock className="h-5 w-5 text-accent-purple" />
+                  </div>
+                  <span className="font-medium">Work Session</span>
+                </div>
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="p-4 space-y-4 animate-slide-up">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-accent-purple/10">
+                      <Clock className="h-5 w-5 text-accent-purple" />
+                    </div>
+                    <span className="font-medium">Work Session</span>
+                  </div>
+                  {!isWorking && (
                     <Button
                       variant="ghost"
-                      size="sm"
-                      onClick={() => setHistoryVisibleCount((prev) => prev + 5)}
-                      className="w-full text-muted-foreground hover:text-foreground"
+                      size="icon"
+                      onClick={() => setSessionBarExpanded(false)}
+                      className="rounded-xl"
                     >
-                      <ChevronDown className="h-4 w-4 mr-2" />
-                      Show more ({filteredHistory.length - historyVisibleCount} remaining)
+                      <ChevronDown className="h-4 w-4" />
                     </Button>
                   )}
                 </div>
-              );
-            })()}
-          </CardContent>
-        </Card>
+
+                {!isWorking ? (
+                  <Button 
+                    onClick={handleStartSession} 
+                    className="w-full rounded-xl bg-gradient-to-r from-accent-purple to-accent-blue text-white border-0 shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-[var(--shadow-lg)] hover:opacity-90"
+                    size="lg"
+                  >
+                    <PlayCircle className="h-5 w-5 mr-2" />
+                    Start Work Session
+                  </Button>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="text-center py-4 rounded-xl bg-card/50">
+                      <p className="text-xs text-muted-foreground mb-1">Session in progress</p>
+                      <p className="text-4xl font-heading font-bold tracking-wider font-mono">
+                        {formatTime(elapsedSeconds)}
+                      </p>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {formatTimeReadable(elapsedSeconds)}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleEndSessionClick} 
+                        className="flex-1 rounded-xl" 
+                        variant="outline"
+                      >
+                        <StopCircle className="h-4 w-4 mr-2" />
+                        End Session
+                      </Button>
+                      <Button 
+                        onClick={() => setShowCheckIn(true)} 
+                        className="flex-1 rounded-xl"
+                      >
+                        Quick Check-in
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </Card>
+        </div>
       </div>
+
+      {/* Floating Save Button */}
+      {hasUnsavedChanges && (
+        <div className="fixed bottom-24 right-4 z-50 animate-fade-in-up">
+          <Button 
+            onClick={() => {
+              if (isEditingTitle) saveTitle();
+              if (isEditingDescription) saveDescription();
+              if (isEditingNotes) saveNotes();
+            }}
+            className="rounded-full shadow-[var(--shadow-xl)] px-6"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            Save Changes
+          </Button>
+        </div>
+      )}
 
       <CheckInModal
         open={showCheckIn}

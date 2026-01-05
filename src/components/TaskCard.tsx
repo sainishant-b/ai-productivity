@@ -133,8 +133,8 @@ const TaskCard = ({ task, onToggleComplete, onClick }: TaskCardProps) => {
 
   return (
     <Card
-      className={`cursor-pointer transition-all duration-300 hover:shadow-[var(--shadow-lift)] hover:-translate-y-1 group relative overflow-hidden ${
-        isOverdue ? "border-destructive border-2" : ""
+      className={`cursor-pointer transition-all duration-300 hover:shadow-[var(--shadow-lift)] hover:-translate-y-1 hover:scale-[1.01] group relative overflow-hidden rounded-2xl border-0 ${
+        isOverdue ? "ring-2 ring-destructive ring-offset-2" : ""
       }`}
       onClick={() => onClick(task.id)}
     >
@@ -146,7 +146,7 @@ const TaskCard = ({ task, onToggleComplete, onClick }: TaskCardProps) => {
       {/* Progress fill layer - inverted colors clipped to progress */}
       {showProgressFill && (
         <div
-          className="absolute inset-0 bg-primary transition-all duration-500 ease-out"
+          className="absolute inset-0 bg-gradient-to-r from-primary to-primary/90 transition-all duration-500 ease-out"
           style={{
             clipPath: `inset(0 ${100 - progress}% 0 0)`,
           }}
