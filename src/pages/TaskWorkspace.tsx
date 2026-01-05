@@ -763,14 +763,23 @@ const filteredHistory = taskHistory.filter((h) =>
                           {history.notes && (
                             <p className="text-sm text-muted-foreground">{history.notes}</p>
                           )}
-                          {history.old_value && history.new_value && (
-                            <div className="text-xs mt-1 space-y-1">
-                              <p className="text-muted-foreground">
-                                <span className="line-through">{history.old_value}</span>
-                                {" → "}
-                                <span className="font-medium">{history.new_value}</span>
+{history.field_changed === "notes" ? (
+                            history.new_value && (
+                              <p className="text-sm mt-1">
+                                <span className="text-muted-foreground">Added: </span>
+                                <span className="font-medium">"{history.new_value}"</span>
                               </p>
-                            </div>
+                            )
+                          ) : (
+                            history.old_value && history.new_value && (
+                              <div className="text-xs mt-1 space-y-1">
+                                <p className="text-muted-foreground">
+                                  <span className="line-through">{history.old_value}</span>
+                                  {" → "}
+                                  <span className="font-medium">{history.new_value}</span>
+                                </p>
+                              </div>
+                            )
                           )}
                         </div>
                       </div>
