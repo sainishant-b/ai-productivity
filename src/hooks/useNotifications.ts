@@ -119,26 +119,31 @@ export const useNotifications = (): UseNotificationsReturn => {
   }, [isSupported]);
 
   const subscribeToPush = useCallback(async (): Promise<boolean> => {
-    if (!swRegistration || !VAPID_PUBLIC_KEY) {
-      console.error("Service worker or VAPID key not available");
+    if (!VAPID_PUBLIC_KEY) {
+      console.error("VAPID key not configured");
       toast.error("Push notifications not configured");
       return false;
     }
 
     try {
-      // Get the user
+      // Get the user first
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in to enable push notifications");
         return false;
       }
 
+      // Wait for service worker to be ready
+      const registration = await navigator.serviceWorker.ready;
+      console.log("Service worker ready for push subscription");
+
       // Subscribe to push
-      const subscription = await swRegistration.pushManager.subscribe({
+      const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
       });
 
+      console.log("Push subscription created:", subscription.endpoint);
       const subscriptionJSON = subscription.toJSON();
       
       // Save subscription to database
@@ -164,10 +169,11 @@ export const useNotifications = (): UseNotificationsReturn => {
       return true;
     } catch (error) {
       console.error("Error subscribing to push:", error);
-      toast.error("Failed to enable push notifications");
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to enable push notifications`);
       return false;
     }
-  }, [swRegistration]);
+  }, []);
 
   const unsubscribeFromPush = useCallback(async (): Promise<boolean> => {
     if (!swRegistration) {
