@@ -221,73 +221,73 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
         </div>
       )}
 
-      {/* Task cards - compact vertical layout */}
+      {/* Task cards - responsive grid */}
       {activeTasks.length > 0 && (
-        <div className="flex flex-col gap-3 max-w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-full">
           {visibleTasks.map((task) => {
             const progress = task.status === 'completed' ? 100 : (task.progress || 0);
+            const showProgressFill = progress > 0;
+
+            const renderContent = (inverted: boolean) => (
+              <div className="flex items-center gap-3 md:gap-4 p-4 md:p-5">
+                <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm md:text-base font-bold shrink-0 ${
+                  inverted ? 'bg-primary-foreground text-primary' : 'bg-foreground text-background'
+                }`}>
+                  {activeTasks.indexOf(task) + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className={`font-medium text-sm md:text-base truncate ${inverted ? 'text-primary-foreground' : ''}`}>
+                    {task.title}
+                  </div>
+                  <div className={`flex items-center gap-2 text-xs md:text-sm mt-1 ${inverted ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                    <Clock className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                    {task.suggestedTime}
+                    {showProgressFill && <span>• {progress}%</span>}
+                  </div>
+                  <p className={`text-xs mt-1.5 line-clamp-1 ${inverted ? 'text-primary-foreground/60' : 'text-muted-foreground/80'}`}>
+                    {task.reasoning}
+                  </p>
+                </div>
+                <Badge className={`shrink-0 text-xs px-2.5 py-1 ${inverted ? 'bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30' : getPriorityColor(task.priority)}`}>
+                  {task.priority}
+                </Badge>
+                <div className="flex gap-1.5 shrink-0">
+                  <Button
+                    onClick={(e) => { e.stopPropagation(); scheduleTask(task); }}
+                    size="sm"
+                    className={`h-8 md:h-9 px-2.5 md:px-3 text-xs ${inverted ? 'bg-primary-foreground text-primary hover:bg-primary-foreground/90' : 'bg-foreground text-background'}`}
+                  >
+                    <CheckCircle2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    onClick={(e) => { e.stopPropagation(); dismissTask(task.taskId); }}
+                    size="sm"
+                    variant="ghost"
+                    className={`h-8 md:h-9 px-2.5 md:px-3 ${inverted ? 'text-primary-foreground hover:bg-primary-foreground/10' : ''}`}
+                  >
+                    <XCircle className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            );
 
             return (
               <Card 
                 key={task.taskId} 
                 onClick={() => navigate(`/task/${task.taskId}`)}
-                className="relative overflow-hidden rounded-lg border-border/40 shadow-none hover:border-primary/30 cursor-pointer transition-colors"
+                className="relative overflow-hidden rounded-xl border shadow-sm transition-all duration-200 hover:shadow-lg hover:border-primary/30 cursor-pointer"
               >
-                <div className="p-3 space-y-1.5">
-                  {/* Row 1: Title + Priority */}
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-medium text-sm truncate flex-1">{task.title}</span>
-                    <Badge className={`shrink-0 text-[10px] px-1.5 py-0 h-4 ${getPriorityColor(task.priority)}`}>
-                      {task.priority}
-                    </Badge>
-                  </div>
-                  
-                  {/* Row 2: Time + Progress */}
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Clock className="h-3 w-3" />
-                    <span>{task.suggestedTime}</span>
-                    {progress > 0 && (
-                      <>
-                        <span className="text-muted-foreground/50">•</span>
-                        <span>{progress}%</span>
-                      </>
-                    )}
-                  </div>
-                  
-                  {/* Row 3: Reasoning */}
-                  <p className="text-xs text-muted-foreground/70 truncate leading-tight">
-                    {task.reasoning}
-                  </p>
-                  
-                  {/* Row 4: Actions */}
-                  <div className="flex items-center justify-end gap-1 pt-1">
-                    <Button
-                      onClick={(e) => { e.stopPropagation(); scheduleTask(task); }}
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
-                    >
-                      <Clock className="h-3 w-3" />
-                      Schedule
-                    </Button>
-                    <Button
-                      onClick={(e) => { e.stopPropagation(); scheduleTask(task); }}
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-success"
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={(e) => { e.stopPropagation(); dismissTask(task.taskId); }}
-                      size="sm"
-                      variant="ghost"
-                      className="h-6 w-6 p-0 text-muted-foreground hover:text-destructive"
-                    >
-                      <XCircle className="h-4 w-4" />
-                    </Button>
-                  </div>
+                <div className="relative">
+                  {renderContent(false)}
                 </div>
+                {showProgressFill && (
+                  <div
+                    className="absolute inset-0 bg-primary transition-all duration-500 ease-out"
+                    style={{ clipPath: `inset(0 ${100 - progress}% 0 0)` }}
+                  >
+                    {renderContent(true)}
+                  </div>
+                )}
               </Card>
             );
           })}
