@@ -25,9 +25,10 @@ interface UseNotificationsReturn {
   unsubscribeFromPush: () => Promise<boolean>;
 }
 
-// VAPID public key for push notifications - use environment variable
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
-
+// VAPID public key for push notifications
+// Public keys are safe to ship in the client; you can override via env if needed.
+const DEFAULT_VAPID_PUBLIC_KEY = "BPQBLz0nfTp7gcUF4rMnPa2DzwslH18EIKhmnwLxHkdF4ezhDzm2YBEmWXMfnMNn07T15_fzcFiHxEPljenSIe0";
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
