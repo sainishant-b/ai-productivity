@@ -12,6 +12,7 @@ import AIRecommendations from "@/components/AIRecommendations";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import StatsSidebar from "@/components/StatsSidebar";
 import MobileStatsBar from "@/components/MobileStatsBar";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import { useCheckInScheduler } from "@/hooks/useCheckInScheduler";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useTaskReminders } from "@/hooks/useTaskReminders";
@@ -196,18 +197,19 @@ const Dashboard = () => {
         <div className="flex items-center justify-between px-3 md:px-4 lg:px-6 py-2">
           <h1 className="font-heading text-base md:text-lg font-bold tracking-tight">AI Productivity</h1>
           <div className="flex items-center gap-1.5 md:gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)} className="text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 rounded-lg">
+            {/* Desktop/Tablet nav buttons - hidden on mobile */}
+            <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)} className="text-xs h-8 px-3 rounded-lg hidden md:flex">
               Check-in
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")} className="text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 rounded-lg hidden sm:flex">
-              <Calendar className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1" />
-              <span className="hidden md:inline">Calendar</span>
+            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")} className="text-xs h-8 px-3 rounded-lg hidden md:flex">
+              <Calendar className="h-3.5 w-3.5 mr-1" />
+              Calendar
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 rounded-lg hidden sm:flex">
-              <BarChart3 className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1" />
-              <span className="hidden md:inline">Insights</span>
+            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="text-xs h-8 px-3 rounded-lg hidden md:flex">
+              <BarChart3 className="h-3.5 w-3.5 mr-1" />
+              Insights
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 rounded-lg hidden md:flex">
+            <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="text-xs h-8 px-3 rounded-lg hidden md:flex">
               Settings
             </Button>
             <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-7 w-7 md:h-8 md:w-8">
@@ -307,11 +309,15 @@ const Dashboard = () => {
         </main>
       </div>
 
-      {/* Floating FAB for mobile */}
+      {/* Mobile bottom navigation */}
+      <MobileBottomNav onCheckIn={() => setShowCheckIn(true)} />
+
+      {/* Floating FAB for mobile - positioned above bottom nav */}
       <Button
         onClick={() => { setSelectedTask(null); setShowTaskDialog(true); }}
         size="icon"
-        className="fixed bottom-4 right-4 h-12 w-12 rounded-full shadow-lg sm:hidden z-50"
+        className="fixed bottom-20 right-4 h-12 w-12 rounded-full shadow-lg md:hidden z-50"
+        style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <Plus className="h-5 w-5" />
       </Button>
