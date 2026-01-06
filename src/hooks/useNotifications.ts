@@ -134,14 +134,20 @@ export const useNotifications = (): UseNotificationsReturn => {
       }
 
       // Wait for service worker to be ready
+      console.log("Waiting for service worker...");
       const registration = await navigator.serviceWorker.ready;
       console.log("Service worker ready for push subscription");
 
-      // Subscribe to push - cast to satisfy TypeScript
+      // Convert VAPID key
+      console.log("Converting VAPID key, length:", VAPID_PUBLIC_KEY.length);
       const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      console.log("Converted key length:", applicationServerKey.length, "bytes");
+
+      // Subscribe to push
+      console.log("Attempting to subscribe to push...");
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: applicationServerKey as unknown as BufferSource,
+        applicationServerKey: applicationServerKey as BufferSource,
       });
 
       console.log("Push subscription created:", subscription.endpoint);
@@ -170,8 +176,14 @@ export const useNotifications = (): UseNotificationsReturn => {
       return true;
     } catch (error) {
       console.error("Error subscribing to push:", error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      toast.error(`Failed to enable push notifications`);
+      if (error instanceof DOMException) {
+        console.error("DOMException name:", error.name, "message:", error.message);
+        toast.error(`Push error: ${error.name} - ${error.message}`);
+      } else if (error instanceof Error) {
+        toast.error(`Push error: ${error.message}`);
+      } else {
+        toast.error("Failed to enable push notifications");
+      }
       return false;
     }
   }, []);
