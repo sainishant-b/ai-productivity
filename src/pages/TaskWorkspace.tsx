@@ -430,7 +430,7 @@ const TaskWorkspace = () => {
       {/* Progress bar at top */}
       <div className="fixed top-0 left-0 right-0 z-50 h-1 bg-muted">
         <div 
-          className="h-full bg-gradient-to-r from-accent-purple to-accent-blue transition-all duration-500 ease-out"
+          className="h-full bg-foreground transition-all duration-500 ease-out"
           style={{ width: `${task.progress}%` }}
         />
       </div>
@@ -822,7 +822,7 @@ const TaskWorkspace = () => {
       {/* Floating Work Session Bar */}
       <div className={`fixed bottom-0 left-0 right-0 z-50 transition-all duration-300 ${sessionBarExpanded || isWorking ? 'translate-y-0' : 'translate-y-0'}`}>
         <div className="max-w-2xl mx-auto px-4 pb-4">
-          <Card className={`rounded-2xl border-0 shadow-[var(--shadow-xl)] overflow-hidden transition-all duration-300 ${isWorking ? 'bg-gradient-to-r from-accent-purple/10 to-accent-blue/10' : 'bg-card'}`}>
+          <Card className={`rounded-2xl border border-border/50 shadow-[var(--shadow-xl)] overflow-hidden transition-all duration-300 ${isWorking ? 'bg-muted/50' : 'bg-card'}`}>
             {/* Slim bar when not expanded */}
             {!sessionBarExpanded && !isWorking ? (
               <div 
@@ -830,8 +830,8 @@ const TaskWorkspace = () => {
                 onClick={() => setSessionBarExpanded(true)}
               >
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-accent-purple/10">
-                    <Clock className="h-5 w-5 text-accent-purple" />
+                  <div className="p-2 rounded-xl bg-muted">
+                    <Clock className="h-5 w-5 text-foreground/60" />
                   </div>
                   <span className="font-medium">Work Session</span>
                 </div>
@@ -841,8 +841,8 @@ const TaskWorkspace = () => {
               <div className="p-4 space-y-4 animate-slide-up">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-accent-purple/10">
-                      <Clock className="h-5 w-5 text-accent-purple" />
+                    <div className="p-2 rounded-xl bg-muted">
+                      <Clock className="h-5 w-5 text-foreground/60" />
                     </div>
                     <span className="font-medium">Work Session</span>
                   </div>
@@ -861,7 +861,7 @@ const TaskWorkspace = () => {
                 {!isWorking ? (
                   <Button 
                     onClick={handleStartSession} 
-                    className="w-full rounded-xl bg-gradient-to-r from-accent-purple to-accent-blue text-white border-0 shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-[var(--shadow-lg)] hover:opacity-90"
+                    className="w-full rounded-xl bg-foreground text-background border-0 shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-[var(--shadow-lg)] hover:opacity-90"
                     size="lg"
                   >
                     <PlayCircle className="h-5 w-5 mr-2" />

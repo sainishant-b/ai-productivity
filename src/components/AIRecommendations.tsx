@@ -174,18 +174,11 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
   const getInsightIcon = (index: number) => {
     const icons = [Lightbulb, TrendingUp, Zap, Sparkles];
     const Icon = icons[index % icons.length];
-    const colors = ['text-accent-orange', 'text-accent-green', 'text-accent-blue', 'text-accent-purple'];
-    return <Icon className={`h-4 w-4 ${colors[index % colors.length]}`} />;
+    return <Icon className="h-4 w-4 text-foreground/60" />;
   };
 
-  const getInsightBorderColor = (index: number) => {
-    const colors = [
-      'from-accent-orange to-accent-orange/50',
-      'from-accent-green to-accent-green/50',
-      'from-accent-blue to-accent-blue/50',
-      'from-accent-purple to-accent-purple/50',
-    ];
-    return colors[index % colors.length];
+  const getInsightBorderColor = (_index: number) => {
+    return 'bg-foreground/20';
   };
 
   const activeTasks = recommendations?.recommendedTasks.filter(
@@ -194,11 +187,11 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
 
   if (isLoading) {
     return (
-      <Card className="rounded-2xl border-0 shadow-[var(--shadow-lg)] overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-accent-purple/5 to-accent-blue/5">
+      <Card className="rounded-2xl border border-border/50 shadow-[var(--shadow-lg)] overflow-hidden">
+        <CardHeader>
           <CardTitle className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-accent-purple/10">
-              <Sparkles className="h-5 w-5 text-accent-purple" />
+            <div className="p-2 rounded-xl bg-muted">
+              <Sparkles className="h-5 w-5 text-foreground/60" />
             </div>
             AI Scheduling Recommendations
           </CardTitle>
@@ -206,7 +199,7 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
         </CardHeader>
         <CardContent className="flex items-center justify-center py-16">
           <div className="flex flex-col items-center gap-3">
-            <Loader2 className="h-8 w-8 animate-spin text-accent-purple" />
+            <Loader2 className="h-8 w-8 animate-spin text-foreground/60" />
             <p className="text-sm text-muted-foreground font-light">Generating personalized insights...</p>
           </div>
         </CardContent>
@@ -217,12 +210,12 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
   if (!recommendations) return null;
 
   return (
-    <Card className="rounded-2xl border-0 shadow-[var(--shadow-lg)] overflow-hidden animate-fade-in-up">
-      <CardHeader className="bg-gradient-to-r from-accent-purple/5 via-accent-blue/5 to-accent-purple/5 border-b border-border/50">
+    <Card className="rounded-2xl border border-border/50 shadow-[var(--shadow-lg)] overflow-hidden animate-fade-in-up">
+      <CardHeader className="border-b border-border/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-accent-purple/20 to-accent-blue/20">
-              <Sparkles className="h-5 w-5 text-accent-purple animate-pulse-subtle" />
+            <div className="p-2.5 rounded-xl bg-muted">
+              <Sparkles className="h-5 w-5 text-foreground/60 animate-pulse-subtle" />
             </div>
             <div>
               <CardTitle className="text-lg font-semibold tracking-tight">Daily Top 5 Recommendations</CardTitle>
@@ -235,7 +228,7 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
             onClick={getRecommendations}
             variant="ghost"
             size="sm"
-            className="gap-2 rounded-xl transition-all duration-200 hover:scale-105 hover:bg-accent-purple/10"
+            className="gap-2 rounded-xl transition-all duration-200 hover:scale-105 hover:bg-muted"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh
@@ -275,7 +268,7 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
                   className="relative flex items-start gap-3 p-4 rounded-xl bg-card border border-border/50 transition-all duration-300 hover:shadow-[var(--shadow-md)] hover:-translate-y-0.5 overflow-hidden animate-fade-in-up"
                   style={{ animationDelay: `${idx * 75}ms` }}
                 >
-                  <div className={`absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${getInsightBorderColor(idx)}`} />
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${getInsightBorderColor(idx)}`} />
                   <div className="pl-2 flex items-start gap-3">
                     {getInsightIcon(idx)}
                     <span className="text-sm text-foreground/80 font-light">{insight}</span>
@@ -296,15 +289,15 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
           {activeTasks.map((task, idx) => (
             <Card 
               key={task.taskId} 
-              className="relative overflow-hidden rounded-xl border-0 shadow-[var(--shadow-md)] transition-all duration-300 hover:shadow-[var(--shadow-lg)] hover:-translate-y-1 hover:scale-[1.02] group animate-fade-in-up"
+              className="relative overflow-hidden rounded-xl border border-border/50 shadow-[var(--shadow-md)] transition-all duration-300 hover:shadow-[var(--shadow-lg)] hover:-translate-y-1 hover:scale-[1.02] group animate-fade-in-up"
               style={{ animationDelay: `${idx * 100}ms` }}
             >
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-accent-purple to-accent-blue" />
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-foreground/20" />
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 pl-2">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-br from-accent-purple to-accent-blue text-white text-xs font-bold transition-transform duration-200 group-hover:scale-110">
+                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-foreground text-background text-xs font-bold transition-transform duration-200 group-hover:scale-110">
                         {idx + 1}
                       </span>
                       <CardTitle className="text-base font-semibold tracking-tight">{task.title}</CardTitle>
@@ -328,7 +321,7 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
                   <Button
                     onClick={() => scheduleTask(task)}
                     size="sm"
-                    className="gap-2 rounded-xl bg-gradient-to-r from-accent-purple to-accent-blue text-white border-0 shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-[var(--shadow-lg)] hover:opacity-90 hover:-translate-y-0.5"
+                    className="gap-2 rounded-xl bg-foreground text-background border-0 shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-[var(--shadow-lg)] hover:opacity-90 hover:-translate-y-0.5"
                   >
                     <CheckCircle2 className="h-4 w-4" />
                     Schedule This
@@ -350,8 +343,8 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
 
         {activeTasks.length === 0 && (
           <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-accent-green/10 mb-4">
-              <CheckCircle2 className="h-8 w-8 text-accent-green" />
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
+              <CheckCircle2 className="h-8 w-8 text-foreground/60" />
             </div>
             <p className="text-muted-foreground font-light">All recommendations have been scheduled</p>
           </div>
