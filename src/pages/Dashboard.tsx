@@ -191,7 +191,7 @@ const Dashboard = () => {
   const completedCount = completedTasks.length;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20 md:pb-0 overflow-x-hidden">
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
         <div className="flex items-center justify-between px-3 md:px-4 lg:px-6 py-2">

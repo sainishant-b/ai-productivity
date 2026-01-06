@@ -182,7 +182,7 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
   if (!recommendations) return null;
 
   return (
-    <div className="space-y-2 md:space-y-3">
+    <div className="space-y-2 md:space-y-3 overflow-hidden">
       {/* Header row */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
