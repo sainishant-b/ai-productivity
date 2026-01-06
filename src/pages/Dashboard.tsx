@@ -217,18 +217,20 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Stats bar for tablet/mobile */}
-      <MobileStatsBar 
-        streak={profile?.current_streak || 0} 
-        completedCount={completedCount}
-        nextCheckIn={formatNextCheckIn()}
-        isWorkHours={isWorkHours}
-      />
+      {/* Stats bar for mobile only */}
+      <div className="md:hidden">
+        <MobileStatsBar 
+          streak={profile?.current_streak || 0} 
+          completedCount={completedCount}
+          nextCheckIn={formatNextCheckIn()}
+          isWorkHours={isWorkHours}
+        />
+      </div>
 
       {/* Main layout */}
       <div className="flex">
-        {/* Sticky sidebar - desktop only (lg+) */}
-        <div className="hidden lg:block p-4 lg:p-6">
+        {/* Sticky sidebar - tablet and desktop (md+) */}
+        <div className="hidden md:block p-4 lg:p-6">
           <StatsSidebar
             streak={profile?.current_streak || 0}
             completedCount={completedCount}
