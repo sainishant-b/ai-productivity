@@ -27,14 +27,14 @@ const CompletedTasksSection = ({ tasks, onToggleComplete, onClick }: CompletedTa
   if (tasks.length === 0) return null;
 
   return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-4">
-      <CollapsibleTrigger className="flex items-center gap-2 w-full py-2 px-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-sm font-medium text-muted-foreground">
-        {isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-3 md:mt-4">
+      <CollapsibleTrigger className="flex items-center gap-1.5 md:gap-2 w-full py-1.5 md:py-2 px-2 md:px-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors text-xs md:text-sm font-medium text-muted-foreground">
+        {isOpen ? <ChevronDown className="h-3.5 w-3.5 md:h-4 md:w-4" /> : <ChevronRight className="h-3.5 w-3.5 md:h-4 md:w-4" />}
         Completed Tasks ({tasks.length})
       </CollapsibleTrigger>
-      <CollapsibleContent className="mt-2 space-y-2">
+      <CollapsibleContent className="mt-1.5 md:mt-2 space-y-1.5 md:space-y-2">
         {tasks.map((task) => (
-          <div key={task.id} className="opacity-60">
+          <div key={task.id} className="opacity-50 md:opacity-60">
             <CompactTaskCard
               task={task}
               onToggleComplete={onToggleComplete}
