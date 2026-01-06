@@ -16,6 +16,7 @@ interface NotificationOptions {
 interface UseNotificationsReturn {
   permission: NotificationPermission | "unsupported";
   isSupported: boolean;
+  isPushSupported: boolean;
   isPushSubscribed: boolean;
   requestPermission: () => Promise<boolean>;
   sendNotification: (options: NotificationOptions) => void;
@@ -25,18 +26,16 @@ interface UseNotificationsReturn {
   unsubscribeFromPush: () => Promise<boolean>;
 }
 
-// VAPID public key for push notifications
-// Public keys are safe to ship in the client; you can override via env if needed.
-const DEFAULT_VAPID_PUBLIC_KEY = "BPQBLz0nfTp7gcUF4rMnPa2DzwslH18EIKhmnwLxHkdF4ezhDzm2YBEmWXMfnMNn07T15_fzcFiHxEPljenSIe0";
-const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || DEFAULT_VAPID_PUBLIC_KEY;
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
+// VAPID public key (safe to ship in the client). Must be a real P-256 VAPID public key.
+const VAPID_PUBLIC_KEY_RAW = (import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined) ?? "";
+const VAPID_PUBLIC_KEY = VAPID_PUBLIC_KEY_RAW.trim().replace(/^"|"$/g, "");
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
 
   const rawData = atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
+  const outputArray = new Uint8Array(new ArrayBuffer(rawData.length));
 
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
@@ -44,30 +43,93 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
+async function validateVapidPublicKey(key: string): Promise<
+  | { ok: true; bytes: Uint8Array<ArrayBuffer> }
+  | { ok: false; reason: string }
+> {
+  if (!key) return { ok: false, reason: "missing" };
+
+  let bytes: Uint8Array<ArrayBuffer>;
+  try {
+    bytes = urlBase64ToUint8Array(key);
+  } catch {
+    return { ok: false, reason: "not base64url" };
+  }
+
+  // Uncompressed P-256 public keys are 65 bytes and start with 0x04.
+  if (bytes.length !== 65) return { ok: false, reason: `expected 65 bytes, got ${bytes.length}` };
+  if (bytes[0] !== 0x04) return { ok: false, reason: "expected uncompressed key (0x04 prefix)" };
+
+  // Optional deeper validation: ensure it's a real P-256 point.
+  try {
+    if (globalThis.crypto?.subtle?.importKey) {
+      await globalThis.crypto.subtle.importKey(
+        "raw",
+        bytes,
+        { name: "ECDH", namedCurve: "P-256" },
+        true,
+        []
+      );
+    }
+  } catch {
+    return { ok: false, reason: "invalid P-256 public key" };
+  }
+
+  return { ok: true, bytes };
+}
+
+function isCapacitorNative(): boolean {
+  const cap = (window as any)?.Capacitor;
+  try {
+    if (cap && typeof cap.isNativePlatform === "function") return !!cap.isNativePlatform();
+    if (cap && typeof cap.isNative === "boolean") return cap.isNative;
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
 export const useNotifications = (): UseNotificationsReturn => {
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const [isSupported, setIsSupported] = useState(false);
+  const [isPushSupported, setIsPushSupported] = useState(false);
   const [isPushSubscribed, setIsPushSubscribed] = useState(false);
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
   useEffect(() => {
     // Check if notifications are supported
     const supported = "Notification" in window && "serviceWorker" in navigator;
+    const pushSupported = supported && "PushManager" in window;
+
     setIsSupported(supported);
+    setIsPushSupported(pushSupported);
 
     if (supported) {
       setPermission(Notification.permission);
-      
+
       // Register service worker
-      navigator.serviceWorker.register("/sw.js")
+      navigator.serviceWorker
+        .register("/sw.js")
         .then((registration) => {
           console.log("Service Worker registered:", registration);
           setSwRegistration(registration);
-          
+
+          if (!pushSupported) {
+            setIsPushSubscribed(false);
+            return;
+          }
+
           // Check if already subscribed
-          registration.pushManager.getSubscription().then((subscription) => {
-            setIsPushSubscribed(!!subscription);
-          });
+          registration.pushManager
+            .getSubscription()
+            .then((subscription) => {
+              setIsPushSubscribed(!!subscription);
+            })
+            .catch((error) => {
+              console.warn("Push subscription check failed (push may be unsupported):", error);
+              setIsPushSupported(false);
+              setIsPushSubscribed(false);
+            });
         })
         .catch((error) => {
           console.error("Service Worker registration failed:", error);
@@ -78,7 +140,7 @@ export const useNotifications = (): UseNotificationsReturn => {
         if (event.data.type === "NOTIFICATION_CLICK") {
           // Handle notification click actions
           const { action, data } = event.data;
-          
+
           if (data.type === "check-in" && action === "checkin") {
             // Dispatch custom event for check-in
             window.dispatchEvent(new CustomEvent("open-checkin"));
@@ -89,6 +151,7 @@ export const useNotifications = (): UseNotificationsReturn => {
       });
     } else {
       setPermission("unsupported");
+      setIsPushSupported(false);
     }
   }, []);
 
@@ -120,6 +183,12 @@ export const useNotifications = (): UseNotificationsReturn => {
   }, [isSupported]);
 
   const subscribeToPush = useCallback(async (): Promise<boolean> => {
+    // Web Push requires PushManager (not available in all environments, especially some Android WebViews).
+    if (!("PushManager" in window)) {
+      toast.error("Push notifications aren't supported on this device/browser");
+      return false;
+    }
+
     if (!VAPID_PUBLIC_KEY) {
       console.error("VAPID key not configured");
       toast.error("Push notifications not configured");
@@ -128,7 +197,9 @@ export const useNotifications = (): UseNotificationsReturn => {
 
     try {
       // Get the user first
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) {
         toast.error("You must be logged in to enable push notifications");
         return false;
@@ -139,32 +210,38 @@ export const useNotifications = (): UseNotificationsReturn => {
       const registration = await navigator.serviceWorker.ready;
       console.log("Service worker ready for push subscription");
 
-      // Convert VAPID key
-      console.log("Converting VAPID key, length:", VAPID_PUBLIC_KEY.length);
-      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-      console.log("Converted key length:", applicationServerKey.length, "bytes");
+      // Validate + convert VAPID key
+      const validation = await validateVapidPublicKey(VAPID_PUBLIC_KEY);
+      if (validation.ok === false) {
+        console.error("Invalid VAPID public key:", validation.reason);
+        toast.error(`Invalid push key: ${validation.reason}`);
+        return false;
+      }
 
       // Subscribe to push
       console.log("Attempting to subscribe to push...");
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: applicationServerKey as BufferSource,
+        applicationServerKey: validation.bytes,
       });
 
       console.log("Push subscription created:", subscription.endpoint);
       const subscriptionJSON = subscription.toJSON();
-      
+
       // Save subscription to database
       const { error } = await supabase
-        .from('push_subscriptions')
-        .upsert({
-          user_id: user.id,
-          endpoint: subscriptionJSON.endpoint!,
-          p256dh_key: subscriptionJSON.keys?.p256dh || '',
-          auth_key: subscriptionJSON.keys?.auth || '',
-        }, {
-          onConflict: 'user_id,endpoint'
-        });
+        .from("push_subscriptions")
+        .upsert(
+          {
+            user_id: user.id,
+            endpoint: subscriptionJSON.endpoint!,
+            p256dh_key: subscriptionJSON.keys?.p256dh || "",
+            auth_key: subscriptionJSON.keys?.auth || "",
+          },
+          {
+            onConflict: "user_id,endpoint",
+          }
+        );
 
       if (error) {
         console.error("Error saving push subscription:", error);
@@ -177,8 +254,20 @@ export const useNotifications = (): UseNotificationsReturn => {
       return true;
     } catch (error) {
       console.error("Error subscribing to push:", error);
+
       if (error instanceof DOMException) {
         console.error("DOMException name:", error.name, "message:", error.message);
+
+        if (error.name === "AbortError") {
+          // Most common causes: invalid VAPID key or unsupported push service (often WebView).
+          toast.error(
+            isCapacitorNative()
+              ? "Web Push isn't supported inside the native app. Use installable web app (PWA) for Web Push, or set up native push (Firebase)."
+              : "Push subscription was rejected. This usually means the VAPID public key is invalid."
+          );
+          return false;
+        }
+
         toast.error(`Push error: ${error.name} - ${error.message}`);
       } else if (error instanceof Error) {
         toast.error(`Push error: ${error.message}`);
@@ -273,6 +362,7 @@ export const useNotifications = (): UseNotificationsReturn => {
   return {
     permission,
     isSupported,
+    isPushSupported,
     isPushSubscribed,
     requestPermission,
     sendNotification,

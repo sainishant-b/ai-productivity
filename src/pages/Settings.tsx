@@ -19,8 +19,17 @@ const Settings = () => {
   const [loading, setLoading] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  
-  const { permission, isSupported, isPushSubscribed, requestPermission, sendNotification, subscribeToPush, unsubscribeFromPush } = useNotifications();
+
+  const {
+    permission,
+    isSupported,
+    isPushSupported,
+    isPushSubscribed,
+    requestPermission,
+    sendNotification,
+    subscribeToPush,
+    unsubscribeFromPush,
+  } = useNotifications();
 
   useEffect(() => {
     loadSettings();
@@ -281,7 +290,7 @@ const Settings = () => {
                     />
                   </div>
                   
-                  {notificationsEnabled && (
+                   {notificationsEnabled && (
                     <>
                       <div className="flex items-center justify-between border-t pt-4">
                         <div className="space-y-0.5">
@@ -293,10 +302,18 @@ const Settings = () => {
                         <Switch
                           id="push-toggle"
                           checked={isPushSubscribed}
+                          disabled={!isPushSupported}
                           onCheckedChange={handlePushToggle}
                         />
                       </div>
-                      
+
+                      {!isPushSupported && (
+                        <p className="text-sm text-muted-foreground">
+                          Push subscriptions aren’t supported in this environment. If you’re testing inside the native Android app,
+                          Web Push won’t work—use an installable web app (PWA) for Web Push, or set up native push via Firebase.
+                        </p>
+                      )}
+
                       <div className="text-sm text-muted-foreground space-y-1 border-t pt-4">
                         <p>You'll receive notifications for:</p>
                         <ul className="list-disc list-inside ml-2 space-y-1">
