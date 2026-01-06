@@ -252,14 +252,21 @@ export const useNotifications = (): UseNotificationsReturn => {
       setIsPushSubscribed(true);
       toast.success("Push notifications enabled!");
       return true;
-    } catch (error) {
-      console.error("Error subscribing to push:", error);
-
+    } catch (error: unknown) {
+      // Log full error object for debugging
+      console.error("Error subscribing to push - full object:", error);
+      console.error("Error type:", typeof error);
+      console.error("Error constructor:", error?.constructor?.name);
+      
       if (error instanceof DOMException) {
-        console.error("DOMException name:", error.name, "message:", error.message);
+        console.error("DOMException details:", {
+          name: error.name,
+          message: error.message,
+          code: error.code,
+          stack: error.stack,
+        });
 
         if (error.name === "AbortError") {
-          // Most common causes: invalid VAPID key or unsupported push service (often WebView).
           toast.error(
             isCapacitorNative()
               ? "Web Push isn't supported inside the native app. Use installable web app (PWA) for Web Push, or set up native push (Firebase)."
@@ -268,10 +275,26 @@ export const useNotifications = (): UseNotificationsReturn => {
           return false;
         }
 
+        if (error.name === "NotAllowedError") {
+          toast.error("Push notifications were denied. Please enable them in browser settings.");
+          return false;
+        }
+
+        if (error.name === "InvalidStateError") {
+          toast.error("Push subscription already exists or is in an invalid state.");
+          return false;
+        }
+
         toast.error(`Push error: ${error.name} - ${error.message}`);
       } else if (error instanceof Error) {
+        console.error("Error details:", {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        });
         toast.error(`Push error: ${error.message}`);
       } else {
+        console.error("Unknown error type:", JSON.stringify(error, null, 2));
         toast.error("Failed to enable push notifications");
       }
       return false;
