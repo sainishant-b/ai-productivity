@@ -229,43 +229,40 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
             const showProgressFill = progress > 0;
 
             const renderContent = (inverted: boolean) => (
-              <div className="flex items-center gap-3 md:gap-4 p-4 md:p-5">
-                <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm md:text-base font-bold shrink-0 ${
+              <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3">
+                <div className={`flex items-center justify-center w-7 h-7 md:w-8 md:h-8 rounded-full text-xs md:text-sm font-bold shrink-0 ${
                   inverted ? 'bg-primary-foreground text-primary' : 'bg-foreground text-background'
                 }`}>
                   {activeTasks.indexOf(task) + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className={`font-medium text-sm md:text-base truncate ${inverted ? 'text-primary-foreground' : ''}`}>
+                  <div className={`font-medium text-xs md:text-sm truncate ${inverted ? 'text-primary-foreground' : ''}`}>
                     {task.title}
                   </div>
-                  <div className={`flex items-center gap-2 text-xs md:text-sm mt-1 ${inverted ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                    <Clock className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                    {task.suggestedTime}
+                  <div className={`flex items-center gap-1.5 text-[10px] md:text-xs mt-0.5 ${inverted ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                    <Clock className="h-3 w-3" />
+                    <span className="truncate">{task.suggestedTime}</span>
                     {showProgressFill && <span>• {progress}%</span>}
                   </div>
-                  <p className={`text-xs mt-1.5 line-clamp-1 ${inverted ? 'text-primary-foreground/60' : 'text-muted-foreground/80'}`}>
-                    {task.reasoning}
-                  </p>
                 </div>
-                <Badge className={`shrink-0 text-xs px-2.5 py-1 ${inverted ? 'bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30' : getPriorityColor(task.priority)}`}>
+                <Badge className={`shrink-0 text-[10px] md:text-xs px-2 py-0.5 ${inverted ? 'bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30' : getPriorityColor(task.priority)}`}>
                   {task.priority}
                 </Badge>
-                <div className="flex gap-1.5 shrink-0">
+                <div className="flex gap-1 shrink-0">
                   <Button
                     onClick={(e) => { e.stopPropagation(); scheduleTask(task); }}
                     size="sm"
-                    className={`h-8 md:h-9 px-2.5 md:px-3 text-xs ${inverted ? 'bg-primary-foreground text-primary hover:bg-primary-foreground/90' : 'bg-foreground text-background'}`}
+                    className={`h-7 w-7 md:h-8 md:w-8 p-0 ${inverted ? 'bg-primary-foreground text-primary hover:bg-primary-foreground/90' : 'bg-foreground text-background'}`}
                   >
-                    <CheckCircle2 className="h-4 w-4" />
+                    <CheckCircle2 className="h-3.5 w-3.5" />
                   </Button>
                   <Button
                     onClick={(e) => { e.stopPropagation(); dismissTask(task.taskId); }}
                     size="sm"
                     variant="ghost"
-                    className={`h-8 md:h-9 px-2.5 md:px-3 ${inverted ? 'text-primary-foreground hover:bg-primary-foreground/10' : ''}`}
+                    className={`h-7 w-7 md:h-8 md:w-8 p-0 ${inverted ? 'text-primary-foreground hover:bg-primary-foreground/10' : ''}`}
                   >
-                    <XCircle className="h-4 w-4" />
+                    <XCircle className="h-3.5 w-3.5" />
                   </Button>
                 </div>
               </div>
