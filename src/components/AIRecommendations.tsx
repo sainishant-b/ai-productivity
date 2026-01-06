@@ -223,7 +223,7 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
 
       {/* Task cards - responsive grid */}
       {activeTasks.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-full">
           {visibleTasks.map((task) => {
             const progress = task.status === 'completed' ? 100 : (task.progress || 0);
             const showProgressFill = progress > 0;

@@ -191,12 +191,12 @@ const Dashboard = () => {
   const completedCount = completedTasks.length;
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0 overflow-x-hidden">
+    <div className="min-h-screen bg-background pb-20 md:pb-0 overflow-hidden">
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center justify-between px-3 md:px-4 lg:px-6 py-2">
-          <h1 className="font-heading text-base md:text-lg font-bold tracking-tight">AI Productivity</h1>
-          <div className="flex items-center gap-1.5 md:gap-2">
+        <div className="flex items-center justify-between px-3 md:px-4 lg:px-6 py-2 max-w-full">
+          <h1 className="font-heading text-base md:text-lg font-bold tracking-tight truncate">AI Productivity</h1>
+          <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
             {/* Desktop/Tablet nav buttons - hidden on mobile */}
             <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)} className="text-xs h-8 px-3 rounded-lg hidden md:flex">
               Check-in
@@ -230,9 +230,9 @@ const Dashboard = () => {
       </div>
 
       {/* Main layout */}
-      <div className="flex">
+      <div className="flex w-full overflow-hidden">
         {/* Sticky sidebar - tablet and desktop (md+) */}
-        <div className="hidden md:block p-4 lg:p-6">
+        <div className="hidden md:block p-4 lg:p-6 shrink-0">
           <StatsSidebar
             streak={profile?.current_streak || 0}
             completedCount={completedCount}
@@ -242,7 +242,7 @@ const Dashboard = () => {
         </div>
 
         {/* Main content */}
-        <main className="flex-1 p-3 md:p-4 lg:p-6 max-w-4xl">
+        <main className="flex-1 p-3 md:p-4 lg:p-6 min-w-0 max-w-full md:max-w-4xl overflow-hidden">
           {showNotificationPrompt && permission === "default" && (
             <div className="mb-3 md:mb-4">
               <NotificationPrompt onDismiss={() => setShowNotificationPrompt(false)} />
