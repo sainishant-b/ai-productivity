@@ -293,11 +293,11 @@ const Dashboard = () => {
         </div>
 
         {/* AI Insight Card */}
-        <Card className="relative overflow-hidden rounded-2xl border-0 bg-gradient-to-r from-accent-purple/5 via-accent-blue/5 to-accent-purple/5 shadow-[var(--shadow-md)] animate-fade-in-up stagger-4">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-accent-purple to-accent-blue" />
+        <Card className="relative overflow-hidden rounded-2xl border border-border/50 shadow-[var(--shadow-md)] animate-fade-in-up stagger-4">
+          <div className="absolute left-0 top-0 bottom-0 w-1 bg-foreground/20" />
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2.5">
-              <Sparkles className="h-4 w-4 text-accent-purple animate-pulse-subtle" />
+              <Sparkles className="h-4 w-4 text-foreground/60 animate-pulse-subtle" />
               AI Insight
             </CardTitle>
           </CardHeader>

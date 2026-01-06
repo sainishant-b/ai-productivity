@@ -76,11 +76,11 @@
     --shadow-glow-blue: 0 8px 32px -8px hsl(217 91% 60% / 0.35);
     --shadow-glow-purple: 0 8px 32px -8px hsl(262 83% 58% / 0.35);
 
-    /* Gradients */
-    --gradient-card: linear-gradient(to bottom, hsl(0 0% 100%), hsl(0 0% 98%));
-    --gradient-card-hover: linear-gradient(to bottom, hsl(0 0% 100%), hsl(0 0% 96%));
-    --gradient-primary: linear-gradient(135deg, hsl(0 0% 15%), hsl(0 0% 8%));
-    --gradient-accent: linear-gradient(135deg, hsl(262 83% 58%), hsl(217 91% 60%));
+    /* Gradients - removed, using solid colors */
+    --gradient-card: hsl(0 0% 100%);
+    --gradient-card-hover: hsl(0 0% 98%);
+    --gradient-primary: hsl(0 0% 10%);
+    --gradient-accent: hsl(0 0% 20%);
   }
 
   .dark {
@@ -144,11 +144,11 @@
     --shadow-glow-blue: 0 8px 32px -8px hsl(217 91% 65% / 0.4);
     --shadow-glow-purple: 0 8px 32px -8px hsl(262 83% 63% / 0.4);
 
-    /* Gradients - Dark Mode */
-    --gradient-card: linear-gradient(to bottom, hsl(220 13% 10%), hsl(220 13% 7%));
-    --gradient-card-hover: linear-gradient(to bottom, hsl(220 13% 12%), hsl(220 13% 8%));
-    --gradient-primary: linear-gradient(135deg, hsl(0 0% 95%), hsl(0 0% 85%));
-    --gradient-accent: linear-gradient(135deg, hsl(262 83% 63%), hsl(217 91% 65%));
+    /* Gradients - Dark Mode - removed, using solid colors */
+    --gradient-card: hsl(220 13% 8%);
+    --gradient-card-hover: hsl(220 13% 10%);
+    --gradient-primary: hsl(0 0% 95%);
+    --gradient-accent: hsl(0 0% 80%);
   }
 }
 
