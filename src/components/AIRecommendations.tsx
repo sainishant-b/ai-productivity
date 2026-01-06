@@ -223,46 +223,49 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
 
       {/* Task cards - responsive grid */}
       {activeTasks.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {visibleTasks.map((task) => {
             const progress = task.status === 'completed' ? 100 : (task.progress || 0);
             const showProgressFill = progress > 0;
 
             const renderContent = (inverted: boolean) => (
-              <div className="flex items-center gap-2 md:gap-3 p-2.5 md:p-3">
-                <div className={`flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full text-[10px] md:text-xs font-bold shrink-0 ${
+              <div className="flex items-center gap-3 md:gap-4 p-4 md:p-5">
+                <div className={`flex items-center justify-center w-8 h-8 md:w-10 md:h-10 rounded-full text-sm md:text-base font-bold shrink-0 ${
                   inverted ? 'bg-primary-foreground text-primary' : 'bg-foreground text-background'
                 }`}>
                   {activeTasks.indexOf(task) + 1}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className={`font-medium text-xs md:text-sm truncate ${inverted ? 'text-primary-foreground' : ''}`}>
+                  <div className={`font-medium text-sm md:text-base truncate ${inverted ? 'text-primary-foreground' : ''}`}>
                     {task.title}
                   </div>
-                  <div className={`flex items-center gap-1.5 md:gap-2 text-[10px] md:text-xs ${inverted ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                    <Clock className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  <div className={`flex items-center gap-2 text-xs md:text-sm mt-1 ${inverted ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                    <Clock className="h-3.5 w-3.5 md:h-4 md:w-4" />
                     {task.suggestedTime}
                     {showProgressFill && <span>• {progress}%</span>}
                   </div>
+                  <p className={`text-xs mt-1.5 line-clamp-1 ${inverted ? 'text-primary-foreground/60' : 'text-muted-foreground/80'}`}>
+                    {task.reasoning}
+                  </p>
                 </div>
-                <Badge className={`shrink-0 text-[10px] md:text-xs px-1.5 md:px-2 ${inverted ? 'bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30' : getPriorityColor(task.priority)}`}>
+                <Badge className={`shrink-0 text-xs px-2.5 py-1 ${inverted ? 'bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30' : getPriorityColor(task.priority)}`}>
                   {task.priority}
                 </Badge>
-                <div className="flex gap-1 shrink-0">
+                <div className="flex gap-1.5 shrink-0">
                   <Button
                     onClick={(e) => { e.stopPropagation(); scheduleTask(task); }}
                     size="sm"
-                    className={`h-6 md:h-7 px-1.5 md:px-2 text-xs ${inverted ? 'bg-primary-foreground text-primary hover:bg-primary-foreground/90' : 'bg-foreground text-background'}`}
+                    className={`h-8 md:h-9 px-2.5 md:px-3 text-xs ${inverted ? 'bg-primary-foreground text-primary hover:bg-primary-foreground/90' : 'bg-foreground text-background'}`}
                   >
-                    <CheckCircle2 className="h-3 w-3" />
+                    <CheckCircle2 className="h-4 w-4" />
                   </Button>
                   <Button
                     onClick={(e) => { e.stopPropagation(); dismissTask(task.taskId); }}
                     size="sm"
                     variant="ghost"
-                    className={`h-6 md:h-7 px-1.5 md:px-2 ${inverted ? 'text-primary-foreground hover:bg-primary-foreground/10' : ''}`}
+                    className={`h-8 md:h-9 px-2.5 md:px-3 ${inverted ? 'text-primary-foreground hover:bg-primary-foreground/10' : ''}`}
                   >
-                    <XCircle className="h-3 w-3" />
+                    <XCircle className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -271,7 +274,8 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
             return (
               <Card 
                 key={task.taskId} 
-                className="relative overflow-hidden rounded-lg border-0 shadow-sm transition-all duration-200 hover:shadow-md"
+                onClick={() => navigate(`/task/${task.taskId}`)}
+                className="relative overflow-hidden rounded-xl border shadow-sm transition-all duration-200 hover:shadow-lg hover:border-primary/30 cursor-pointer"
               >
                 <div className="relative">
                   {renderContent(false)}
