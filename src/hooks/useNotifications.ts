@@ -28,7 +28,7 @@ interface UseNotificationsReturn {
 // VAPID public key for push notifications
 const VAPID_PUBLIC_KEY = 'BPQBLz0nfTp7gcUF4rMnPa2DzwslH18EIKhmnwLxHkdF4ezhDzm2YBEmWXMfnMNn07T15_fzcFiHxEPljenSIe0';
 
-function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding)
     .replace(/-/g, '+')
@@ -40,7 +40,7 @@ function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   for (let i = 0; i < rawData.length; ++i) {
     outputArray[i] = rawData.charCodeAt(i);
   }
-  return outputArray.buffer as ArrayBuffer;
+  return outputArray;
 }
 
 export const useNotifications = (): UseNotificationsReturn => {
@@ -137,10 +137,11 @@ export const useNotifications = (): UseNotificationsReturn => {
       const registration = await navigator.serviceWorker.ready;
       console.log("Service worker ready for push subscription");
 
-      // Subscribe to push
+      // Subscribe to push - cast to satisfy TypeScript
+      const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        applicationServerKey: applicationServerKey as unknown as BufferSource,
       });
 
       console.log("Push subscription created:", subscription.endpoint);
