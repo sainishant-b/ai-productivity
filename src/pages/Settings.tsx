@@ -111,6 +111,29 @@ const Settings = () => {
     }
   };
 
+  const handleDebugPush = async () => {
+    try {
+      // Check service worker
+      const swReg = await navigator.serviceWorker.ready;
+      console.log("Service Worker ready:", swReg);
+      toast.info("Service Worker: Ready ✓");
+      
+      // Check existing subscription
+      const existingSub = await swReg.pushManager.getSubscription();
+      console.log("Existing subscription:", existingSub);
+      toast.info(existingSub ? "Existing subscription found" : "No existing subscription");
+      
+      // Check permission state
+      const permState = await swReg.pushManager.permissionState({ userVisibleOnly: true });
+      console.log("Push permission state:", permState);
+      toast.info(`Push permission: ${permState}`);
+      
+    } catch (error) {
+      console.error("Debug error:", error);
+      toast.error(`Debug failed: ${error instanceof Error ? error.message : 'Unknown'}`);
+    }
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate("/auth");
@@ -283,9 +306,14 @@ const Settings = () => {
                           <li>Upcoming task reminders</li>
                         </ul>
                       </div>
-                      <Button onClick={handleTestNotification} variant="outline" className="w-full md:w-auto">
-                        Send Test Notification
-                      </Button>
+                      <div className="flex gap-2 flex-wrap">
+                        <Button onClick={handleTestNotification} variant="outline" className="w-full md:w-auto">
+                          Send Test Notification
+                        </Button>
+                        <Button onClick={handleDebugPush} variant="ghost" size="sm" className="text-muted-foreground">
+                          Debug Push Status
+                        </Button>
+                      </div>
                     </>
                   )}
                 </div>
