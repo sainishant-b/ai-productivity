@@ -33,7 +33,7 @@ const MobileStatsBar = ({ streak, completedCount, nextCheckIn, isWorkHours }: Mo
       </div>
 
       {/* Mobile view - minimal chips */}
-      <div className="flex md:hidden items-center gap-3 px-3 py-2 bg-card/80 backdrop-blur-sm border-b border-border/50 overflow-x-auto">
+      <div className="flex md:hidden items-center gap-3 px-3 py-2 bg-card/80 backdrop-blur-sm border-b border-border/50 overflow-x-auto scrollbar-hide max-w-full">
         <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-full bg-accent-orange/10 shrink-0">
           <Flame className="h-3.5 w-3.5 text-accent-orange" />
           <span className="font-bold text-sm"><CountUpNumber value={streak} /></span>

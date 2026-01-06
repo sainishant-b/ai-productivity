@@ -170,7 +170,7 @@ const CompactTaskCard = ({ task, onToggleComplete, onClick }: CompactTaskCardPro
 
   return (
     <Card
-      className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group relative overflow-hidden rounded-lg border-0 ${
+      className={`cursor-pointer transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group relative overflow-hidden rounded-lg border-0 max-w-full ${
         isOverdue ? "ring-1 ring-destructive ring-offset-1" : ""
       }`}
       onClick={() => onClick(task.id)}
