@@ -25,8 +25,8 @@ interface UseNotificationsReturn {
   unsubscribeFromPush: () => Promise<boolean>;
 }
 
-// VAPID public key for push notifications
-const VAPID_PUBLIC_KEY = 'BPQBLz0nfTp7gcUF4rMnPa2DzwslH18EIKhmnwLxHkdF4ezhDzm2YBEmWXMfnMNn07T15_fzcFiHxEPljenSIe0';
+// VAPID public key for push notifications - use environment variable
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
