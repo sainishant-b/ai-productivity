@@ -29,6 +29,8 @@ interface RecommendedTask {
   reasoning: string;
   confidence: 'high' | 'medium' | 'low';
   priority: 'high' | 'medium' | 'low';
+  progress?: number;
+  status?: string;
 }
 
 interface Warning {
@@ -286,59 +288,113 @@ export default function AIRecommendations({ onTaskUpdate }: AIRecommendationsPro
               ? `${activeTasks.length} Recommended Task${activeTasks.length !== 1 ? 's' : ''} for Today`
               : 'All tasks scheduled'}
           </h4>
-          {activeTasks.map((task, idx) => (
-            <Card 
-              key={task.taskId} 
-              className="relative overflow-hidden rounded-xl border border-border/50 shadow-[var(--shadow-md)] transition-all duration-300 hover:shadow-[var(--shadow-lg)] hover:-translate-y-1 hover:scale-[1.02] group animate-fade-in-up"
-              style={{ animationDelay: `${idx * 100}ms` }}
-            >
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-foreground/20" />
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 pl-2">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className="flex items-center justify-center w-7 h-7 rounded-full bg-foreground text-background text-xs font-bold transition-transform duration-200 group-hover:scale-110">
-                        {idx + 1}
-                      </span>
-                      <CardTitle className="text-base font-semibold tracking-tight">{task.title}</CardTitle>
+          {activeTasks.map((task, idx) => {
+            const progress = task.status === 'completed' ? 100 : (task.progress || 0);
+            const showProgressFill = progress > 0;
+
+            const renderTaskContent = (inverted: boolean) => (
+              <>
+                <CardHeader className="pb-3">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 pl-2">
+                      <div className="flex items-center gap-3 mb-2">
+                        <span className={`flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-transform duration-200 group-hover:scale-110 ${
+                          inverted ? 'bg-primary-foreground text-primary' : 'bg-foreground text-background'
+                        }`}>
+                          {idx + 1}
+                        </span>
+                        <CardTitle className={`text-base font-semibold tracking-tight ${
+                          inverted ? 'text-primary-foreground' : ''
+                        }`}>{task.title}</CardTitle>
+                      </div>
+                      <CardDescription className={`flex items-center gap-2 font-light ${
+                        inverted ? 'text-primary-foreground/80' : ''
+                      }`}>
+                        <Clock className="h-3.5 w-3.5" />
+                        {task.suggestedTime}
+                        <span className="flex items-center gap-1 ml-2">
+                          {inverted ? <ArrowUp className="h-4 w-4 text-primary-foreground/80" /> : getUrgencyIndicator(task.priority)}
+                        </span>
+                      </CardDescription>
                     </div>
-                    <CardDescription className="flex items-center gap-2 font-light">
-                      <Clock className="h-3.5 w-3.5" />
-                      {task.suggestedTime}
-                      <span className="flex items-center gap-1 ml-2">
-                        {getUrgencyIndicator(task.priority)}
-                      </span>
-                    </CardDescription>
+                    <Badge 
+                      variant="outline" 
+                      className={inverted 
+                        ? 'bg-primary-foreground/20 text-primary-foreground border-primary-foreground/30' 
+                        : getPriorityBadge(task.priority).props.className
+                      }
+                    >
+                      {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                    </Badge>
                   </div>
-                  {getPriorityBadge(task.priority)}
+                </CardHeader>
+                <CardContent className="space-y-4 pl-5">
+                  <div className={`p-3 rounded-lg transition-colors duration-200 ${
+                    inverted ? 'bg-primary-foreground/10' : 'bg-muted/30 group-hover:bg-muted/50'
+                  }`}>
+                    <p className={`text-sm font-light leading-relaxed ${
+                      inverted ? 'text-primary-foreground/90' : 'text-foreground/70'
+                    }`}>{task.reasoning}</p>
+                  </div>
+                  {showProgressFill && (
+                    <div className={`text-xs font-medium ${inverted ? 'text-primary-foreground' : 'text-foreground'}`}>
+                      {progress}% complete
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={(e) => { e.stopPropagation(); scheduleTask(task); }}
+                      size="sm"
+                      className={`gap-2 rounded-xl border-0 shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5 ${
+                        inverted 
+                          ? 'bg-primary-foreground text-primary hover:bg-primary-foreground/90' 
+                          : 'bg-foreground text-background hover:opacity-90'
+                      }`}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      Schedule This
+                    </Button>
+                    <Button
+                      onClick={(e) => { e.stopPropagation(); dismissTask(task.taskId); }}
+                      size="sm"
+                      variant="ghost"
+                      className={`gap-2 rounded-xl transition-all duration-200 ${
+                        inverted ? 'text-primary-foreground hover:bg-primary-foreground/10' : 'hover:bg-muted'
+                      }`}
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Skip
+                    </Button>
+                  </div>
+                </CardContent>
+              </>
+            );
+
+            return (
+              <Card 
+                key={task.taskId} 
+                className="relative overflow-hidden rounded-xl border-0 shadow-[var(--shadow-md)] transition-all duration-300 hover:shadow-[var(--shadow-lg)] hover:-translate-y-1 hover:scale-[1.02] group animate-fade-in-up"
+                style={{ animationDelay: `${idx * 100}ms` }}
+              >
+                {/* Base layer - normal colors */}
+                <div className="relative">
+                  {renderTaskContent(false)}
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4 pl-5">
-                <div className="bg-muted/30 p-3 rounded-lg transition-colors duration-200 group-hover:bg-muted/50">
-                  <p className="text-sm text-foreground/70 font-light leading-relaxed">{task.reasoning}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => scheduleTask(task)}
-                    size="sm"
-                    className="gap-2 rounded-xl bg-foreground text-background border-0 shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-[var(--shadow-lg)] hover:opacity-90 hover:-translate-y-0.5"
+
+                {/* Progress fill layer - inverted colors */}
+                {showProgressFill && (
+                  <div
+                    className="absolute inset-0 bg-primary transition-all duration-500 ease-out"
+                    style={{
+                      clipPath: `inset(0 ${100 - progress}% 0 0)`,
+                    }}
                   >
-                    <CheckCircle2 className="h-4 w-4" />
-                    Schedule This
-                  </Button>
-                  <Button
-                    onClick={() => dismissTask(task.taskId)}
-                    size="sm"
-                    variant="ghost"
-                    className="gap-2 rounded-xl transition-all duration-200 hover:bg-muted"
-                  >
-                    <XCircle className="h-4 w-4" />
-                    Skip
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    {renderTaskContent(true)}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
         </div>
 
         {activeTasks.length === 0 && (

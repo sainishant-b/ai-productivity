@@ -196,7 +196,9 @@ Focus on the top 5 most important tasks for today. Consider energy patterns from
                         suggestedDate: { type: 'string', description: 'Date in YYYY-MM-DD format' },
                         reasoning: { type: 'string', description: 'Brief explanation (1-2 sentences)' },
                         confidence: { type: 'string', enum: ['high', 'medium', 'low'] },
-                        priority: { type: 'string', enum: ['high', 'medium', 'low'] }
+                        priority: { type: 'string', enum: ['high', 'medium', 'low'] },
+                        progress: { type: 'number', description: 'Task progress percentage (0-100)' },
+                        status: { type: 'string', description: 'Task status (not_started, in_progress, completed)' }
                       },
                       required: ['taskId', 'title', 'suggestedTime', 'suggestedDate', 'reasoning', 'confidence', 'priority']
                     }
@@ -257,6 +259,20 @@ Focus on the top 5 most important tasks for today. Consider energy patterns from
     }
 
     const result = JSON.parse(toolCall.function.arguments);
+    
+    // Merge task progress/status from fetched tasks into recommendations
+    const taskMap = new Map(tasks?.map(t => [t.id, t]) || []);
+    if (result.recommendedTasks) {
+      result.recommendedTasks = result.recommendedTasks.map((rec: any) => {
+        const task = taskMap.get(rec.taskId);
+        return {
+          ...rec,
+          progress: task?.progress ?? 0,
+          status: task?.status ?? 'not_started',
+        };
+      });
+    }
+    
     console.log('AI Recommendations generated:', result);
 
     return new Response(
