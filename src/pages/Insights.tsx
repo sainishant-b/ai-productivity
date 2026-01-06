@@ -173,8 +173,8 @@ const Insights = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
+    <div className="flex-1 bg-background overflow-auto">
+      <header className="border-b bg-card sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <ArrowLeft className="h-5 w-5" />

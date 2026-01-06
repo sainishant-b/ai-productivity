@@ -12,7 +12,6 @@ import AIRecommendations from "@/components/AIRecommendations";
 import NotificationPrompt from "@/components/NotificationPrompt";
 import StatsSidebar from "@/components/StatsSidebar";
 import MobileStatsBar from "@/components/MobileStatsBar";
-import MobileBottomNav from "@/components/MobileBottomNav";
 import { useCheckInScheduler } from "@/hooks/useCheckInScheduler";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useTaskReminders } from "@/hooks/useTaskReminders";
@@ -191,9 +190,9 @@ const Dashboard = () => {
   const completedCount = completedTasks.length;
 
   return (
-    <div className="min-h-screen bg-background pb-20 md:pb-0 overflow-hidden">
+    <div className="flex-1 overflow-hidden">
       {/* Header */}
-      <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-40">
         <div className="flex items-center justify-between px-3 md:px-4 lg:px-6 py-2 max-w-full">
           <h1 className="font-heading text-base md:text-lg font-bold tracking-tight truncate">AI Productivity</h1>
           <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
@@ -309,14 +308,11 @@ const Dashboard = () => {
         </main>
       </div>
 
-      {/* Mobile bottom navigation */}
-      <MobileBottomNav onCheckIn={() => setShowCheckIn(true)} />
-
       {/* Floating FAB for mobile - positioned above bottom nav */}
       <Button
         onClick={() => { setSelectedTask(null); setShowTaskDialog(true); }}
         size="icon"
-        className="fixed bottom-20 right-4 h-12 w-12 rounded-full shadow-lg md:hidden z-50"
+        className="fixed bottom-20 right-4 h-12 w-12 rounded-full shadow-lg md:hidden z-40"
         style={{ marginBottom: "env(safe-area-inset-bottom, 0px)" }}
       >
         <Plus className="h-5 w-5" />
