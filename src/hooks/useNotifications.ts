@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 interface NotificationOptions {
   title: string;
   body: string;
   tag?: string;
   icon?: string;
-  data?: Record<string, any>;
+  data?: Record<string, unknown>;
   actions?: { action: string; title: string }[];
   requireInteraction?: boolean;
   silent?: boolean;
@@ -15,15 +16,37 @@ interface NotificationOptions {
 interface UseNotificationsReturn {
   permission: NotificationPermission | "unsupported";
   isSupported: boolean;
+  isPushSubscribed: boolean;
   requestPermission: () => Promise<boolean>;
   sendNotification: (options: NotificationOptions) => void;
   scheduleNotification: (options: NotificationOptions, delayMs: number) => number;
   cancelScheduledNotification: (timeoutId: number) => void;
+  subscribeToPush: () => Promise<boolean>;
+  unsubscribeFromPush: () => Promise<boolean>;
+}
+
+// VAPID public key - this will be set from environment
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY || '';
+
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray.buffer as ArrayBuffer;
 }
 
 export const useNotifications = (): UseNotificationsReturn => {
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const [isSupported, setIsSupported] = useState(false);
+  const [isPushSubscribed, setIsPushSubscribed] = useState(false);
   const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null);
 
   useEffect(() => {
@@ -39,6 +62,11 @@ export const useNotifications = (): UseNotificationsReturn => {
         .then((registration) => {
           console.log("Service Worker registered:", registration);
           setSwRegistration(registration);
+          
+          // Check if already subscribed
+          registration.pushManager.getSubscription().then((subscription) => {
+            setIsPushSubscribed(!!subscription);
+          });
         })
         .catch((error) => {
           console.error("Service Worker registration failed:", error);
@@ -89,6 +117,88 @@ export const useNotifications = (): UseNotificationsReturn => {
       return false;
     }
   }, [isSupported]);
+
+  const subscribeToPush = useCallback(async (): Promise<boolean> => {
+    if (!swRegistration || !VAPID_PUBLIC_KEY) {
+      console.error("Service worker or VAPID key not available");
+      toast.error("Push notifications not configured");
+      return false;
+    }
+
+    try {
+      // Get the user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("You must be logged in to enable push notifications");
+        return false;
+      }
+
+      // Subscribe to push
+      const subscription = await swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+      });
+
+      const subscriptionJSON = subscription.toJSON();
+      
+      // Save subscription to database
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .upsert({
+          user_id: user.id,
+          endpoint: subscriptionJSON.endpoint!,
+          p256dh_key: subscriptionJSON.keys?.p256dh || '',
+          auth_key: subscriptionJSON.keys?.auth || '',
+        }, {
+          onConflict: 'user_id,endpoint'
+        });
+
+      if (error) {
+        console.error("Error saving push subscription:", error);
+        toast.error("Failed to save push subscription");
+        return false;
+      }
+
+      setIsPushSubscribed(true);
+      toast.success("Push notifications enabled!");
+      return true;
+    } catch (error) {
+      console.error("Error subscribing to push:", error);
+      toast.error("Failed to enable push notifications");
+      return false;
+    }
+  }, [swRegistration]);
+
+  const unsubscribeFromPush = useCallback(async (): Promise<boolean> => {
+    if (!swRegistration) {
+      return false;
+    }
+
+    try {
+      const subscription = await swRegistration.pushManager.getSubscription();
+      if (subscription) {
+        await subscription.unsubscribe();
+
+        // Remove from database
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase
+            .from('push_subscriptions')
+            .delete()
+            .eq('user_id', user.id)
+            .eq('endpoint', subscription.endpoint);
+        }
+      }
+
+      setIsPushSubscribed(false);
+      toast.success("Push notifications disabled");
+      return true;
+    } catch (error) {
+      console.error("Error unsubscribing from push:", error);
+      toast.error("Failed to disable push notifications");
+      return false;
+    }
+  }, [swRegistration]);
 
   const sendNotification = useCallback(async (options: NotificationOptions) => {
     if (!isSupported || permission !== "granted") {
@@ -143,10 +253,13 @@ export const useNotifications = (): UseNotificationsReturn => {
   return {
     permission,
     isSupported,
+    isPushSubscribed,
     requestPermission,
     sendNotification,
     scheduleNotification,
     cancelScheduledNotification,
+    subscribeToPush,
+    unsubscribeFromPush,
   };
 };
 
@@ -166,10 +279,9 @@ export const getNotificationSender = () => {
               tag: options.tag || `notification-${Date.now()}`,
               icon: options.icon || "/favicon.ico",
               data: options.data,
-              actions: options.actions,
               requireInteraction: options.requireInteraction,
               silent: options.silent,
-            } as NotificationOptions);
+            });
           });
         } else {
           new Notification(options.title, {

@@ -20,7 +20,7 @@ const Settings = () => {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   
-  const { permission, isSupported, requestPermission, sendNotification } = useNotifications();
+  const { permission, isSupported, isPushSubscribed, requestPermission, sendNotification, subscribeToPush, unsubscribeFromPush } = useNotifications();
 
   useEffect(() => {
     loadSettings();
@@ -101,6 +101,14 @@ const Settings = () => {
       body: "Notifications are working! You'll receive check-in reminders and task alerts.",
       tag: "test-notification",
     });
+  };
+
+  const handlePushToggle = async (enabled: boolean) => {
+    if (enabled) {
+      await subscribeToPush();
+    } else {
+      await unsubscribeFromPush();
+    }
   };
 
   const handleSignOut = async () => {
@@ -252,6 +260,20 @@ const Settings = () => {
                   
                   {notificationsEnabled && (
                     <>
+                      <div className="flex items-center justify-between border-t pt-4">
+                        <div className="space-y-0.5">
+                          <Label htmlFor="push-toggle" className="text-base">Push Notifications</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Receive notifications even when the app is closed
+                          </p>
+                        </div>
+                        <Switch
+                          id="push-toggle"
+                          checked={isPushSubscribed}
+                          onCheckedChange={handlePushToggle}
+                        />
+                      </div>
+                      
                       <div className="text-sm text-muted-foreground space-y-1 border-t pt-4">
                         <p>You'll receive notifications for:</p>
                         <ul className="list-disc list-inside ml-2 space-y-1">
