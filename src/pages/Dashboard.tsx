@@ -193,37 +193,42 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="flex items-center justify-between px-4 py-2">
-          <h1 className="font-heading text-lg font-bold tracking-tight">AI Productivity</h1>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)} className="text-xs h-8 px-3 rounded-lg">
+        <div className="flex items-center justify-between px-3 md:px-4 lg:px-6 py-2">
+          <h1 className="font-heading text-base md:text-lg font-bold tracking-tight">AI Productivity</h1>
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)} className="text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 rounded-lg">
               Check-in
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")} className="text-xs h-8 px-3 rounded-lg hidden sm:flex">
-              <Calendar className="h-3.5 w-3.5 mr-1" />
-              Calendar
+            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")} className="text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 rounded-lg hidden sm:flex">
+              <Calendar className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1" />
+              <span className="hidden md:inline">Calendar</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="text-xs h-8 px-3 rounded-lg hidden sm:flex">
-              <BarChart3 className="h-3.5 w-3.5 mr-1" />
-              Insights
+            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 rounded-lg hidden sm:flex">
+              <BarChart3 className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1" />
+              <span className="hidden md:inline">Insights</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="text-xs h-8 px-3 rounded-lg hidden sm:flex">
+            <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="text-[10px] md:text-xs h-7 md:h-8 px-2 md:px-3 rounded-lg hidden md:flex">
               Settings
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-8 w-8">
-              <LogOut className="h-4 w-4" />
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-7 w-7 md:h-8 md:w-8">
+              <LogOut className="h-3.5 w-3.5 md:h-4 md:w-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      {/* Mobile stats bar */}
-      <MobileStatsBar streak={profile?.current_streak || 0} completedCount={completedCount} />
+      {/* Stats bar for tablet/mobile */}
+      <MobileStatsBar 
+        streak={profile?.current_streak || 0} 
+        completedCount={completedCount}
+        nextCheckIn={formatNextCheckIn()}
+        isWorkHours={isWorkHours}
+      />
 
       {/* Main layout */}
       <div className="flex">
-        {/* Sticky sidebar - desktop only */}
-        <div className="hidden lg:block p-4">
+        {/* Sticky sidebar - desktop only (lg+) */}
+        <div className="hidden lg:block p-4 lg:p-6">
           <StatsSidebar
             streak={profile?.current_streak || 0}
             completedCount={completedCount}
@@ -233,53 +238,53 @@ const Dashboard = () => {
         </div>
 
         {/* Main content */}
-        <main className="flex-1 p-4 max-w-4xl">
+        <main className="flex-1 p-3 md:p-4 lg:p-6 max-w-4xl">
           {showNotificationPrompt && permission === "default" && (
-            <div className="mb-4">
+            <div className="mb-3 md:mb-4">
               <NotificationPrompt onDismiss={() => setShowNotificationPrompt(false)} />
             </div>
           )}
 
           {/* AI Recommendations */}
           {user && (
-            <div className="mb-4">
+            <div className="mb-3 md:mb-4 lg:mb-6">
               <AIRecommendations onTaskUpdate={fetchTasks} />
             </div>
           )}
 
           {/* Task header */}
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-heading text-lg font-bold">
+          <div className="flex items-center justify-between mb-2 md:mb-3">
+            <h2 className="font-heading text-base md:text-lg font-bold">
               Active Tasks
               {activeTasks.length > 0 && (
-                <span className="text-muted-foreground font-normal text-sm ml-2">({activeTasks.length})</span>
+                <span className="text-muted-foreground font-normal text-xs md:text-sm ml-1.5 md:ml-2">({activeTasks.length})</span>
               )}
             </h2>
             <Button 
               onClick={() => { setSelectedTask(null); setShowTaskDialog(true); }}
               size="sm"
-              className="h-8 px-3 text-xs rounded-lg"
+              className="h-7 md:h-8 px-2 md:px-3 text-[10px] md:text-xs rounded-lg hidden sm:flex"
             >
-              <Plus className="h-3.5 w-3.5 mr-1" />
+              <Plus className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1" />
               New Task
             </Button>
           </div>
 
           {/* Task list */}
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <div className="flex items-center justify-center py-6 md:py-8">
+              <div className="w-5 h-5 md:w-6 md:h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           ) : tasks.length === 0 ? (
-            <div className="p-8 text-center rounded-xl border-dashed border-2 border-border/50 bg-card/50">
-              <p className="text-muted-foreground mb-3 text-sm">No tasks yet. Create your first task!</p>
-              <Button onClick={() => setShowTaskDialog(true)} size="sm" className="rounded-lg">
-                <Plus className="h-3.5 w-3.5 mr-1" />
+            <div className="p-6 md:p-8 text-center rounded-xl border-dashed border-2 border-border/50 bg-card/50">
+              <p className="text-muted-foreground mb-2 md:mb-3 text-xs md:text-sm">No tasks yet. Create your first task!</p>
+              <Button onClick={() => setShowTaskDialog(true)} size="sm" className="rounded-lg text-xs md:text-sm">
+                <Plus className="h-3 w-3 md:h-3.5 md:w-3.5 mr-1" />
                 Create Task
               </Button>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5 md:space-y-2">
               {activeTasks.map((task) => (
                 <CompactTaskCard
                   key={task.id}
@@ -299,6 +304,15 @@ const Dashboard = () => {
           )}
         </main>
       </div>
+
+      {/* Floating FAB for mobile */}
+      <Button
+        onClick={() => { setSelectedTask(null); setShowTaskDialog(true); }}
+        size="icon"
+        className="fixed bottom-4 right-4 h-12 w-12 rounded-full shadow-lg sm:hidden z-50"
+      >
+        <Plus className="h-5 w-5" />
+      </Button>
 
       <TaskDialog
         open={showTaskDialog}
