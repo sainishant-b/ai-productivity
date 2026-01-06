@@ -61,11 +61,12 @@ serve(async (req) => {
 
     console.log('Fetching tasks and data for user:', user.id);
 
-    // Fetch user's tasks
+    // Fetch user's incomplete tasks only (exclude completed)
     const { data: tasks, error: tasksError } = await supabaseClient
       .from('tasks')
       .select('*')
       .eq('user_id', user.id)
+      .neq('status', 'completed')
       .order('created_at', { ascending: false });
 
     if (tasksError) {
