@@ -2,15 +2,16 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus, Flame, LogOut, Sparkles, Clock, Calendar, BarChart3, CheckCircle2 } from "lucide-react";
+import { Plus, LogOut, Calendar, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
-import TaskCard from "@/components/TaskCard";
+import CompactTaskCard from "@/components/CompactTaskCard";
+import CompletedTasksSection from "@/components/CompletedTasksSection";
 import TaskDialog from "@/components/TaskDialog";
 import CheckInModal from "@/components/CheckInModal";
 import AIRecommendations from "@/components/AIRecommendations";
 import NotificationPrompt from "@/components/NotificationPrompt";
-import CountUpNumber from "@/components/CountUpNumber";
+import StatsSidebar from "@/components/StatsSidebar";
+import MobileStatsBar from "@/components/MobileStatsBar";
 import { useCheckInScheduler } from "@/hooks/useCheckInScheduler";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useTaskReminders } from "@/hooks/useTaskReminders";
@@ -26,7 +27,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [showNotificationPrompt, setShowNotificationPrompt] = useState(true);
   
-  const { permission, sendNotification } = useNotifications();
+  const { permission } = useNotifications();
 
   const checkInQuestions = [
     "What are you working on right now?",
@@ -48,8 +49,8 @@ const Dashboard = () => {
     }
   });
 
-  // Task reminders for due/overdue tasks
   useTaskReminders({ tasks, enabled: permission === "granted" });
+  
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
@@ -64,7 +65,6 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate]);
 
-  // Listen for notification clicks to open check-in
   useEffect(() => {
     const handleOpenCheckIn = () => {
       setShowCheckIn(true);
@@ -162,11 +162,9 @@ const Dashboard = () => {
       const yesterday = new Date(today);
       yesterday.setDate(yesterday.getDate() - 1);
       
-      // Only update if we haven't checked in today
       if (!lastCheckIn || lastCheckIn.getTime() !== today.getTime()) {
         let newStreak = 1;
         
-        // If last check-in was yesterday, continue the streak
         if (lastCheckIn && lastCheckIn.getTime() === yesterday.getTime()) {
           newStreak = profile.current_streak + 1;
         }
@@ -187,174 +185,120 @@ const Dashboard = () => {
     navigate("/auth");
   };
 
-  const topTasks = tasks.filter(t => t.status !== "completed").slice(0, 3);
-  const completedCount = tasks.filter(t => t.status === "completed").length;
+  const activeTasks = tasks.filter(t => t.status !== "completed");
+  const completedTasks = tasks.filter(t => t.status === "completed");
+  const completedCount = completedTasks.length;
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Header */}
       <header className="border-b bg-card/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between mb-3 sm:mb-0">
-            <h1 className="font-heading text-lg sm:text-2xl font-bold tracking-tight">AI Productivity</h1>
-            <Button variant="ghost" size="icon" onClick={handleSignOut} className="transition-all duration-200 hover:scale-110 sm:hidden">
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3 sm:mt-3 lg:mt-0 lg:absolute lg:right-4 lg:top-1/2 lg:-translate-y-1/2">
-            <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)} className="text-xs sm:text-sm px-3 sm:px-4 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-md border-border/50 bg-card/50 backdrop-blur-sm">
+        <div className="flex items-center justify-between px-4 py-2">
+          <h1 className="font-heading text-lg font-bold tracking-tight">AI Productivity</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setShowCheckIn(true)} className="text-xs h-8 px-3 rounded-lg">
               Check-in
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")} className="text-xs sm:text-sm px-3 sm:px-4 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-md border-border/50 bg-card/50 backdrop-blur-sm">
-              <Calendar className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+            <Button variant="outline" size="sm" onClick={() => navigate("/calendar")} className="text-xs h-8 px-3 rounded-lg hidden sm:flex">
+              <Calendar className="h-3.5 w-3.5 mr-1" />
               Calendar
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="text-xs sm:text-sm px-3 sm:px-4 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-md border-border/50 bg-card/50 backdrop-blur-sm">
-              <BarChart3 className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
+            <Button variant="outline" size="sm" onClick={() => navigate("/insights")} className="text-xs h-8 px-3 rounded-lg hidden sm:flex">
+              <BarChart3 className="h-3.5 w-3.5 mr-1" />
               Insights
             </Button>
-            <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="text-xs sm:text-sm px-3 sm:px-4 rounded-xl transition-all duration-200 hover:scale-105 hover:shadow-md border-border/50 bg-card/50 backdrop-blur-sm">
+            <Button variant="outline" size="sm" onClick={() => navigate("/settings")} className="text-xs h-8 px-3 rounded-lg hidden sm:flex">
               Settings
             </Button>
-            <Button variant="ghost" size="icon" onClick={handleSignOut} className="transition-all duration-200 hover:scale-110 hidden sm:flex">
-              <LogOut className="h-5 w-5" />
+            <Button variant="ghost" size="icon" onClick={handleSignOut} className="h-8 w-8">
+              <LogOut className="h-4 w-4" />
             </Button>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-8">
-        {/* Stats Grid */}
-        <div className="grid md:grid-cols-3 gap-5">
-          {/* Streak Card */}
-          <Card className="relative overflow-hidden gradient-card rounded-2xl border-0 shadow-[var(--shadow-lg)] transition-all duration-300 hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 group animate-fade-in-up stagger-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent-orange/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <CardHeader className="pb-2 relative">
-              <CardTitle className="font-heading text-sm font-medium flex items-center gap-2.5 text-muted-foreground">
-                <div className="p-2 rounded-xl bg-accent-orange/10 group-hover:bg-accent-orange/20 transition-colors duration-300">
-                  <Flame className="h-5 w-5 text-accent-orange animate-icon-pulse" />
-                </div>
-                Current Streak
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative pt-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold font-heading tracking-tight">
-                  <CountUpNumber value={profile?.current_streak || 0} />
-                </span>
-                <span className="text-lg font-light text-muted-foreground">
-                  {(profile?.current_streak || 0) === 1 ? 'day' : 'days'}
-                </span>
-              </div>
-            </CardContent>
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-accent-orange/50 to-accent-orange opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </Card>
+      {/* Mobile stats bar */}
+      <MobileStatsBar streak={profile?.current_streak || 0} completedCount={completedCount} />
 
-          {/* Next Check-in Card */}
-          <Card className="relative overflow-hidden gradient-card rounded-2xl border-0 shadow-[var(--shadow-lg)] transition-all duration-300 hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 group animate-fade-in-up stagger-2">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent-blue/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <CardHeader className="pb-2 relative">
-              <CardTitle className="font-heading text-sm font-medium flex items-center gap-2.5 text-muted-foreground">
-                <div className="p-2 rounded-xl bg-accent-blue/10 group-hover:bg-accent-blue/20 transition-colors duration-300">
-                  <Clock className="h-5 w-5 text-accent-blue" />
-                </div>
-                Next Check-in
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative pt-2">
-              <p className="text-lg font-semibold">{formatNextCheckIn()}</p>
-              {!isWorkHours && (
-                <p className="text-sm text-muted-foreground mt-1 font-light">Outside work hours</p>
+      {/* Main layout */}
+      <div className="flex">
+        {/* Sticky sidebar - desktop only */}
+        <div className="hidden lg:block p-4">
+          <StatsSidebar
+            streak={profile?.current_streak || 0}
+            completedCount={completedCount}
+            nextCheckIn={formatNextCheckIn()}
+            isWorkHours={isWorkHours}
+          />
+        </div>
+
+        {/* Main content */}
+        <main className="flex-1 p-4 max-w-4xl">
+          {showNotificationPrompt && permission === "default" && (
+            <div className="mb-4">
+              <NotificationPrompt onDismiss={() => setShowNotificationPrompt(false)} />
+            </div>
+          )}
+
+          {/* AI Recommendations */}
+          {user && (
+            <div className="mb-4">
+              <AIRecommendations onTaskUpdate={fetchTasks} />
+            </div>
+          )}
+
+          {/* Task header */}
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-heading text-lg font-bold">
+              Active Tasks
+              {activeTasks.length > 0 && (
+                <span className="text-muted-foreground font-normal text-sm ml-2">({activeTasks.length})</span>
               )}
-            </CardContent>
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-accent-blue/50 to-accent-blue opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </Card>
-
-          {/* Completed Card */}
-          <Card className="relative overflow-hidden gradient-card rounded-2xl border-0 shadow-[var(--shadow-lg)] transition-all duration-300 hover:shadow-[var(--shadow-xl)] hover:-translate-y-1 group animate-fade-in-up stagger-3">
-            <div className="absolute inset-0 bg-gradient-to-br from-accent-green/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <CardHeader className="pb-2 relative">
-              <CardTitle className="font-heading text-sm font-medium flex items-center gap-2.5 text-muted-foreground">
-                <div className="p-2 rounded-xl bg-accent-green/10 group-hover:bg-accent-green/20 transition-colors duration-300">
-                  <CheckCircle2 className="h-5 w-5 text-accent-green" />
-                </div>
-                Tasks Completed
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="relative pt-2">
-              <div className="flex items-baseline gap-2">
-                <span className="text-5xl font-bold font-heading tracking-tight">
-                  <CountUpNumber value={completedCount} />
-                </span>
-                <span className="text-lg font-light text-muted-foreground">total</span>
-              </div>
-            </CardContent>
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-accent-green/50 to-accent-green opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </Card>
-        </div>
-
-        {/* AI Insight Card */}
-        <Card className="relative overflow-hidden rounded-2xl border border-border/50 shadow-[var(--shadow-md)] animate-fade-in-up stagger-4">
-          <div className="absolute left-0 top-0 bottom-0 w-1 bg-foreground/20" />
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2.5">
-              <Sparkles className="h-4 w-4 text-foreground/60 animate-pulse-subtle" />
-              AI Insight
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-foreground/80 font-light">You're maintaining strong momentum across your tasks</p>
-          </CardContent>
-        </Card>
-
-        {showNotificationPrompt && permission === "default" && (
-          <div className="animate-fade-in-up stagger-5">
-            <NotificationPrompt onDismiss={() => setShowNotificationPrompt(false)} />
-          </div>
-        )}
-
-        {user && <AIRecommendations onTaskUpdate={fetchTasks} />}
-
-        <div className="flex items-center justify-between animate-fade-in-up">
-          <h2 className="font-heading text-2xl font-bold tracking-tight">Your Tasks</h2>
-          <Button 
-            onClick={() => { setSelectedTask(null); setShowTaskDialog(true); }}
-            className="rounded-xl shadow-[var(--shadow-md)] transition-all duration-200 hover:shadow-[var(--shadow-lg)] hover:-translate-y-0.5"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Task
-          </Button>
-        </div>
-
-        {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : tasks.length === 0 ? (
-          <Card className="p-12 text-center rounded-2xl border-dashed border-2 border-border/50 bg-card/50">
-            <p className="text-muted-foreground mb-4 font-light">No tasks yet. Create your first task to get started!</p>
-            <Button onClick={() => setShowTaskDialog(true)} className="rounded-xl">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Your First Task
+            </h2>
+            <Button 
+              onClick={() => { setSelectedTask(null); setShowTaskDialog(true); }}
+              size="sm"
+              className="h-8 px-3 text-xs rounded-lg"
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" />
+              New Task
             </Button>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {tasks.map((task, index) => (
-              <div 
-                key={task.id} 
-                className="animate-fade-in-up"
-                style={{ animationDelay: `${index * 50}ms` }}
-              >
-                <TaskCard
+          </div>
+
+          {/* Task list */}
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : tasks.length === 0 ? (
+            <div className="p-8 text-center rounded-xl border-dashed border-2 border-border/50 bg-card/50">
+              <p className="text-muted-foreground mb-3 text-sm">No tasks yet. Create your first task!</p>
+              <Button onClick={() => setShowTaskDialog(true)} size="sm" className="rounded-lg">
+                <Plus className="h-3.5 w-3.5 mr-1" />
+                Create Task
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {activeTasks.map((task) => (
+                <CompactTaskCard
+                  key={task.id}
                   task={task}
                   onToggleComplete={handleToggleComplete}
                   onClick={(id) => navigate(`/task/${id}`)}
                 />
-              </div>
-            ))}
-          </div>
-        )}
-      </main>
+              ))}
+
+              {/* Completed tasks section */}
+              <CompletedTasksSection
+                tasks={completedTasks}
+                onToggleComplete={handleToggleComplete}
+                onClick={(id) => navigate(`/task/${id}`)}
+              />
+            </div>
+          )}
+        </main>
+      </div>
 
       <TaskDialog
         open={showTaskDialog}
